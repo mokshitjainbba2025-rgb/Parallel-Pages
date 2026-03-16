@@ -9,8 +9,10 @@ import multer from 'multer';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const DB_FILE = path.join(__dirname, 'db.json');
-const JWT_SECRET = 'parallel-pages-secret-key'; // In production, use env variable
+const DB_FILE = process.env.NODE_ENV === 'production' 
+  ? path.join('/tmp', 'db.json') 
+  : path.join(__dirname, 'db.json');
+const JWT_SECRET = process.env.JWT_SECRET || 'parallel-pages-secret-key';
 
 // Initial Data
 const initialData = {
@@ -143,6 +145,9 @@ const initialData = {
       linkedin: 'https://linkedin.com',
       twitter: 'https://twitter.com'
     },
+    authorName: 'Mokshit Jain',
+    authorBio: 'Mokshit is a builder and storyteller focused on the intersection of technology and creativity. He documents his journey to help other young builders navigate the startup world.',
+    authorImage: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Mokshit',
     themeMode: 'light'
   },
   users: [
@@ -160,7 +165,13 @@ const initialData = {
 // Database Helper
 function getDB() {
   if (!fs.existsSync(DB_FILE)) {
-    fs.writeFileSync(DB_FILE, JSON.stringify(initialData, null, 2));
+    // On Vercel, we might need to copy the initial db from the project root to /tmp
+    const templatePath = path.join(__dirname, 'db.json');
+    if (fs.existsSync(templatePath)) {
+      fs.writeFileSync(DB_FILE, fs.readFileSync(templatePath, 'utf-8'));
+    } else {
+      fs.writeFileSync(DB_FILE, JSON.stringify(initialData, null, 2));
+    }
   }
   return JSON.parse(fs.readFileSync(DB_FILE, 'utf-8'));
 }
@@ -310,6 +321,9 @@ async function startServer() {
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server running on http://localhost:${PORT}`);
   });
+
+  return app;
 }
 
-startServer();
+const appPromise = startServer();
+export default appPromise;

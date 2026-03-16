@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { Post } from '../types';
 import { api } from '../services/api';
+import { useApp } from '../App';
 import { motion, useScroll, useSpring } from 'motion/react';
 import { formatDate } from '../lib/utils';
 import ReactMarkdown from 'react-markdown';
@@ -10,6 +11,7 @@ import { Share2, Bookmark, MessageCircle, Clock, ChevronLeft, Twitter, Linkedin,
 
 export default function SinglePost() {
   const { slug } = useParams<{ slug: string }>();
+  const { settings } = useApp();
   const [post, setPost] = useState<Post | null>(null);
   const [relatedPosts, setRelatedPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
@@ -73,10 +75,10 @@ export default function SinglePost() {
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 py-8 border-y border-black/5">
             <div className="flex items-center gap-4">
               <div className="w-14 h-14 rounded-full bg-gray-200 overflow-hidden">
-                <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${post.authorName}`} alt={post.authorName} />
+                <img src={settings?.authorImage || `https://api.dicebear.com/7.x/avataaars/svg?seed=${post.authorName}`} alt={post.authorName} />
               </div>
               <div>
-                <p className="font-bold text-lg">{post.authorName}</p>
+                <p className="font-bold text-lg">{settings?.authorName || post.authorName}</p>
                 <p className="text-sm text-black/40">Published on {formatDate(post.publishedAt)}</p>
               </div>
             </div>
@@ -126,16 +128,16 @@ export default function SinglePost() {
         {/* Author Bio */}
         <div className="mt-20 p-12 bg-gray-50 rounded-3xl flex flex-col md:flex-row gap-8 items-center text-center md:text-left">
           <div className="w-24 h-24 rounded-full bg-gray-200 overflow-hidden shrink-0">
-            <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${post.authorName}`} alt={post.authorName} />
+            <img src={settings?.authorImage || `https://api.dicebear.com/7.x/avataaars/svg?seed=${post.authorName}`} alt={post.authorName} />
           </div>
           <div>
-            <h3 className="text-xl font-bold mb-2">Written by {post.authorName}</h3>
+            <h3 className="text-xl font-bold mb-2">Written by {settings?.authorName || post.authorName}</h3>
             <p className="text-black/60 leading-relaxed mb-6">
-              Mokshit is a builder and storyteller focused on the intersection of technology and creativity. He documents his journey to help other young builders navigate the startup world.
+              {settings?.authorBio || "Mokshit is a builder and storyteller focused on the intersection of technology and creativity. He documents his journey to help other young builders navigate the startup world."}
             </p>
             <div className="flex justify-center md:justify-start gap-4">
-              <a href="#" className="text-sm font-bold text-blue-600 hover:underline">Follow on Twitter</a>
-              <a href="#" className="text-sm font-bold text-blue-600 hover:underline">View Profile</a>
+              {settings?.socialLinks.twitter && <a href={settings.socialLinks.twitter} className="text-sm font-bold text-blue-600 hover:underline">Follow on Twitter</a>}
+              <Link to="/about" className="text-sm font-bold text-blue-600 hover:underline">View Profile</Link>
             </div>
           </div>
         </div>

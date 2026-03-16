@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import Layout from '../components/Layout';
 import { Post } from '../types';
 import { api } from '../services/api';
+import { useApp } from '../App';
 import { Link } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { formatDate, calculateReadingTime } from '../lib/utils';
@@ -9,6 +10,7 @@ import { ArrowRight } from 'lucide-react';
 
 export default function Home() {
   const [posts, setPosts] = useState<Post[]>([]);
+  const { settings } = useApp();
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -86,10 +88,10 @@ export default function Home() {
               </p>
               <div className="flex items-center gap-4">
                 <div className="w-10 h-10 rounded-full bg-gray-200 overflow-hidden">
-                  <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${featuredPost.authorName}`} alt={featuredPost.authorName} />
+                  <img src={settings?.authorImage || `https://api.dicebear.com/7.x/avataaars/svg?seed=${featuredPost.authorName}`} alt={featuredPost.authorName} />
                 </div>
                 <div>
-                  <p className="text-sm font-bold">{featuredPost.authorName}</p>
+                  <p className="text-sm font-bold">{settings?.authorName || featuredPost.authorName}</p>
                   <p className="text-xs text-black/40">{featuredPost.readingTime} min read</p>
                 </div>
               </div>
@@ -139,9 +141,9 @@ export default function Home() {
               </p>
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-full bg-gray-200 overflow-hidden">
-                  <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${post.authorName}`} alt={post.authorName} />
+                  <img src={settings?.authorImage || `https://api.dicebear.com/7.x/avataaars/svg?seed=${post.authorName}`} alt={post.authorName} />
                 </div>
-                <p className="text-xs font-bold">{post.authorName}</p>
+                <p className="text-xs font-bold">{settings?.authorName || post.authorName}</p>
               </div>
             </motion.div>
           ))}

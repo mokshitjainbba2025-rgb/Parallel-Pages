@@ -38,6 +38,9 @@ export interface SiteSettings {
     twitter?: string;
     youtube?: string;
   };
+  authorName: string;
+  authorBio: string;
+  authorImage: string;
   themeMode: 'light' | 'dark' | 'system';
 }
 

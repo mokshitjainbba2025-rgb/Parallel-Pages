@@ -148,6 +148,44 @@ export default function AdminSettings() {
           </div>
         </div>
 
+        {/* Author Profile */}
+        <div className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm">
+          <h3 className="text-xl font-bold mb-8 flex items-center gap-3">
+            <LayoutIcon className="text-pink-600" size={24} /> Author Profile
+          </h3>
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-gray-700">Author Name</label>
+                <input
+                  type="text"
+                  value={formData.authorName}
+                  onChange={(e) => setFormData({ ...formData, authorName: e.target.value })}
+                  className="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-gray-700">Author Profile Image URL</label>
+                <input
+                  type="text"
+                  value={formData.authorImage}
+                  onChange={(e) => setFormData({ ...formData, authorImage: e.target.value })}
+                  className="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-bold text-gray-700">Author Bio</label>
+              <textarea
+                value={formData.authorBio}
+                onChange={(e) => setFormData({ ...formData, authorBio: e.target.value })}
+                rows={4}
+                className="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all resize-none"
+              />
+            </div>
+          </div>
+        </div>
+
         {/* Social Links */}
         <div className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm">
           <h3 className="text-xl font-bold mb-8 flex items-center gap-3">

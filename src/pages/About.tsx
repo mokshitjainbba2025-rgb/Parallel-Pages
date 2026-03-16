@@ -1,8 +1,10 @@
 import React from 'react';
 import Layout from '../components/Layout';
+import { useApp } from '../App';
 import { motion } from 'motion/react';
 
 export default function About() {
+  const { settings } = useApp();
   return (
     <Layout>
       <div className="max-w-4xl mx-auto">
@@ -41,9 +43,9 @@ export default function About() {
             <div>
               <h3 className="text-xs font-bold uppercase tracking-widest text-black/40 mb-4">Founder</h3>
               <div className="w-20 h-20 rounded-2xl bg-gray-200 overflow-hidden mb-4">
-                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Mokshit" alt="Founder" />
+                <img src={settings?.authorImage || "https://api.dicebear.com/7.x/avataaars/svg?seed=Mokshit"} alt="Founder" />
               </div>
-              <p className="font-bold">Mokshit Jain</p>
+              <p className="font-bold">{settings?.authorName || "Mokshit Jain"}</p>
               <p className="text-sm text-black/40">Entrepreneur & Writer</p>
             </div>
             <div>

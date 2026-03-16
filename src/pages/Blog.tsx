@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import Layout from '../components/Layout';
 import { Post } from '../types';
 import { api } from '../services/api';
+import { useApp } from '../App';
 import { Link } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { formatDate } from '../lib/utils';
@@ -10,6 +11,7 @@ import { cn } from '../lib/utils';
 
 export default function Blog() {
   const [posts, setPosts] = useState<Post[]>([]);
+  const { settings } = useApp();
   const [filteredPosts, setFilteredPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -135,9 +137,9 @@ export default function Blog() {
               <div className="flex items-center justify-between pt-6 border-t border-black/5">
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-full bg-gray-200 overflow-hidden">
-                    <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${post.authorName}`} alt={post.authorName} />
+                    <img src={settings?.authorImage || `https://api.dicebear.com/7.x/avataaars/svg?seed=${post.authorName}`} alt={post.authorName} />
                   </div>
-                  <span className="text-xs font-bold">{post.authorName}</span>
+                  <span className="text-xs font-bold">{settings?.authorName || post.authorName}</span>
                 </div>
                 <span className="text-[10px] font-bold text-black/40 uppercase tracking-widest">{post.readingTime} min read</span>
               </div>

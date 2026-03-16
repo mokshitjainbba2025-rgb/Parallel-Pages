@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import AdminLayout from '../../components/AdminLayout';
 import { api } from '../../services/api';
 import { Post } from '../../types';
+import { useApp } from '../../App';
 import { Plus, Search, MoreVertical, Edit2, Trash2, ExternalLink, X, Save, Image as ImageIcon, Tag, Layout as LayoutIcon } from 'lucide-react';
 import { formatDate } from '../../lib/utils';
 import { useSearchParams } from 'react-router-dom';
@@ -9,6 +10,7 @@ import { motion, AnimatePresence } from 'motion/react';
 
 export default function AdminPosts() {
   const [posts, setPosts] = useState<Post[]>([]);
+  const { settings } = useApp();
   const [loading, setLoading] = useState(true);
   const [searchParams, setSearchParams] = useSearchParams();
   const [isEditorOpen, setIsEditorOpen] = useState(false);
@@ -66,7 +68,7 @@ export default function AdminPosts() {
       } else {
         await api.createPost({
           ...editingPost,
-          authorName: 'Mokshit Jain', // Mock author
+          authorName: settings?.authorName || 'Mokshit Jain',
           authorId: 'admin',
           publishedAt: new Date().toISOString(),
           readingTime: Math.ceil((editingPost.content?.split(' ').length || 0) / 200)
