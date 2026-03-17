@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "tsx server.ts",
     "build": "vite build",
-    "start": "node server.ts",
+    "start": "tsx server.ts",
     "preview": "vite preview",
     "clean": "rm -rf dist",
     "lint": "tsc --noEmit"
@@ -44,6 +44,6 @@
     "vite": "^6.2.0"
   },
   "engines": {
-    "node": ">=20"
+    "node": "20.x"
   }
 }

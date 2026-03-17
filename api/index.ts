@@ -1,4 +1,4 @@
-import appPromise from '../server.ts';
+import appPromise from '../server.js';
 
 export default async (req: any, res: any) => {
   try {
