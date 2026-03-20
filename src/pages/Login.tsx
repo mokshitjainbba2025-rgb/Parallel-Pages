@@ -2,25 +2,22 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useApp } from '../App';
 import { motion } from 'motion/react';
-import { Lock, Mail, ArrowLeft, AlertCircle } from 'lucide-react';
+import { ArrowLeft, AlertCircle } from 'lucide-react';
 
 export default function Login() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { login } = useApp();
   const navigate = useNavigate();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleGoogleLogin = async () => {
     setError('');
     setLoading(true);
     try {
-      await login({ email, password });
+      await login();
       navigate('/admin');
     } catch (err) {
-      setError('Invalid email or password. Please try again.');
+      setError('Google login failed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -46,7 +43,7 @@ export default function Login() {
         className="mt-8 sm:mx-auto sm:w-full sm:max-w-md"
       >
         <div className="bg-white py-10 px-6 shadow-xl rounded-3xl sm:px-10 border border-black/5">
-          <form className="space-y-6" onSubmit={handleSubmit}>
+          <div className="space-y-6">
             {error && (
               <div className="bg-red-50 border border-red-100 text-red-600 px-4 py-3 rounded-xl flex items-center gap-3 text-sm">
                 <AlertCircle size={18} />
@@ -55,59 +52,20 @@ export default function Login() {
             )}
 
             <div>
-              <label htmlFor="email" className="block text-sm font-bold text-gray-700 mb-2">
-                Email address
-              </label>
-              <div className="relative">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="block w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm"
-                  placeholder="admin@parallelpages.com"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label htmlFor="password" className="block text-sm font-bold text-gray-700 mb-2">
-                Password
-              </label>
-              <div className="relative">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                <input
-                  id="password"
-                  name="password"
-                  type="password"
-                  autoComplete="current-password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="block w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm"
-                  placeholder="••••••••"
-                />
-              </div>
-            </div>
-
-            <div>
               <button
-                type="submit"
+                onClick={handleGoogleLogin}
                 disabled={loading}
-                className="w-full flex justify-center py-4 px-4 border border-transparent rounded-xl shadow-sm text-sm font-bold text-white bg-black hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all disabled:opacity-50"
+                className="w-full flex items-center justify-center gap-3 py-4 px-4 border border-gray-200 rounded-xl shadow-sm text-sm font-bold text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all disabled:opacity-50"
               >
-                {loading ? 'Signing in...' : 'Sign in'}
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" className="w-5 h-5" />
+                {loading ? 'Signing in...' : 'Sign in with Google'}
               </button>
             </div>
-          </form>
+          </div>
 
           <div className="mt-8 pt-8 border-t border-gray-100 text-center">
             <p className="text-xs text-gray-400">
-              Default credentials: admin@parallelpages.com / admin123
+              Only authorized authors can access the admin dashboard.
             </p>
           </div>
         </div>

@@ -1,0 +1,134 @@
+{
+  "entities": {
+    "Post": {
+      "title": "Post",
+      "description": "A blog post",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "slug": { "type": "string" },
+        "content": { "type": "string" },
+        "excerpt": { "type": "string" },
+        "coverImage": { "type": "string" },
+        "authorId": { "type": "string" },
+        "authorName": { "type": "string" },
+        "authorAvatar": { "type": "string" },
+        "status": { "type": "string", "enum": ["draft", "published"] },
+        "publishedAt": { "type": "object", "description": "Firebase Timestamp" },
+        "createdAt": { "type": "object", "description": "Firebase Timestamp" },
+        "updatedAt": { "type": "object", "description": "Firebase Timestamp" },
+        "tags": { "type": "array", "items": { "type": "string" } },
+        "category": { "type": "string" },
+        "readingTime": { "type": "number" },
+        "seo": {
+          "type": "object",
+          "properties": {
+            "title": { "type": "string" },
+            "description": { "type": "string" },
+            "ogImage": { "type": "string" }
+          }
+        }
+      },
+      "required": ["title", "slug", "content", "authorId", "status"]
+    },
+    "SiteSettings": {
+      "title": "SiteSettings",
+      "description": "Global site settings",
+      "type": "object",
+      "properties": {
+        "siteName": { "type": "string" },
+        "siteDescription": { "type": "string" },
+        "primaryColor": { "type": "string" },
+        "secondaryColor": { "type": "string" },
+        "accentColor": { "type": "string" },
+        "fontSans": { "type": "string" },
+        "fontSerif": { "type": "string" },
+        "logoUrl": { "type": "string" },
+        "navigation": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "label": { "type": "string" },
+              "href": { "type": "string" }
+            }
+          }
+        },
+        "socialLinks": {
+          "type": "object",
+          "properties": {
+            "instagram": { "type": "string" },
+            "linkedin": { "type": "string" },
+            "twitter": { "type": "string" },
+            "youtube": { "type": "string" }
+          }
+        },
+        "authorName": { "type": "string" },
+        "authorBio": { "type": "string" },
+        "authorImage": { "type": "string" },
+        "themeMode": { "type": "string", "enum": ["light", "dark", "system"] }
+      }
+    },
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User profile information",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "bio": { "type": "string" },
+        "role": { "type": "string", "enum": ["admin", "author"] }
+      },
+      "required": ["uid", "email", "role"]
+    },
+    "Comment": {
+      "title": "Comment",
+      "description": "A comment on a post",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "postId": { "type": "string" },
+        "authorName": { "type": "string" },
+        "authorId": { "type": "string" },
+        "content": { "type": "string" },
+        "createdAt": { "type": "object", "description": "Firebase Timestamp" }
+      },
+      "required": ["postId", "authorName", "content"]
+    },
+    "NewsletterSubscriber": {
+      "title": "NewsletterSubscriber",
+      "description": "A newsletter subscriber",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string" },
+        "subscribedAt": { "type": "object", "description": "Firebase Timestamp" }
+      },
+      "required": ["email"]
+    }
+  },
+  "firestore": {
+    "/posts/{postId}": {
+      "schema": "Post",
+      "description": "Collection of blog posts"
+    },
+    "/settings/site": {
+      "schema": "SiteSettings",
+      "description": "Global site settings document"
+    },
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "Collection of user profiles"
+    },
+    "/comments/{commentId}": {
+      "schema": "Comment",
+      "description": "Collection of comments"
+    },
+    "/subscribers/{subscriberId}": {
+      "schema": "NewsletterSubscriber",
+      "description": "Collection of newsletter subscribers"
+    }
+  }
+}

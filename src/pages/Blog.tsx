@@ -20,10 +20,9 @@ export default function Blog() {
   useEffect(() => {
     const fetchPosts = async () => {
       try {
-        const data = await api.getPosts();
-        const published = data.filter(p => p.status === 'published');
-        setPosts(published);
-        setFilteredPosts(published);
+        const data = await api.getPublishedPosts();
+        setPosts(data);
+        setFilteredPosts(data);
       } catch (err) {
         console.error(err);
       } finally {

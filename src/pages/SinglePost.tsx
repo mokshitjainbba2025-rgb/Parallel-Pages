@@ -7,11 +7,11 @@ import { useApp } from '../App';
 import { motion, useScroll, useSpring } from 'motion/react';
 import { formatDate } from '../lib/utils';
 import ReactMarkdown from 'react-markdown';
-import { Share2, Bookmark, MessageCircle, Clock, ChevronLeft, Twitter, Linkedin, Facebook } from 'lucide-react';
+import { Share2, Bookmark, Clock, ChevronLeft, Twitter, Linkedin } from 'lucide-react';
 
 export default function SinglePost() {
   const { slug } = useParams<{ slug: string }>();
-  const { settings } = useApp();
+  const { settings, user } = useApp();
   const [post, setPost] = useState<Post | null>(null);
   const [relatedPosts, setRelatedPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
@@ -26,12 +26,17 @@ export default function SinglePost() {
   useEffect(() => {
     const fetchPost = async () => {
       if (!slug) return;
+      setLoading(true);
       try {
-        const data = await api.getPost(slug);
+        // If user is admin or author, they might want to preview drafts
+        const isAdmin = user?.role === 'admin';
+        const data = await api.getPostBySlug(slug, isAdmin);
         setPost(data);
 
-        const allPosts = await api.getPosts();
-        setRelatedPosts(allPosts.filter(p => p.id !== data.id && p.status === 'published').slice(0, 3));
+        if (data) {
+          const allPosts = await api.getPublishedPosts();
+          setRelatedPosts(allPosts.filter(p => p.id !== data.id).slice(0, 3));
+        }
       } catch (err) {
         console.error(err);
       } finally {
@@ -40,7 +45,7 @@ export default function SinglePost() {
     };
     fetchPost();
     window.scrollTo(0, 0);
-  }, [slug]);
+  }, [slug, user]);
 
   if (loading) return <Layout><div className="py-40 text-center">Loading article...</div></Layout>;
   if (!post) return <Layout><div className="py-40 text-center">Article not found.</div></Layout>;

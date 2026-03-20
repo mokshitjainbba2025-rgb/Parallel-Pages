@@ -10,7 +10,7 @@ import { motion, AnimatePresence } from 'motion/react';
 
 export default function AdminPosts() {
   const [posts, setPosts] = useState<Post[]>([]);
-  const { settings } = useApp();
+  const { settings, user } = useApp();
   const [loading, setLoading] = useState(true);
   const [searchParams, setSearchParams] = useSearchParams();
   const [isEditorOpen, setIsEditorOpen] = useState(false);
@@ -61,30 +61,34 @@ export default function AdminPosts() {
   };
 
   const handleSave = async () => {
-    if (!editingPost) return;
+    if (!editingPost || !user) return;
     try {
       if (editingPost.id) {
         await api.updatePost(editingPost.id, editingPost);
       } else {
         await api.createPost({
           ...editingPost,
-          authorName: settings?.authorName || 'Mokshit Jain',
-          authorId: 'admin',
-          publishedAt: new Date().toISOString(),
+          authorName: user.displayName || settings?.authorName || 'Anonymous',
+          authorId: user.uid,
+          authorAvatar: user.photoURL || undefined,
           readingTime: Math.ceil((editingPost.content?.split(' ').length || 0) / 200)
         });
       }
       await fetchPosts();
       setSearchParams({});
     } catch (err) {
-      alert('Failed to save post');
+      console.error('Failed to save post', err);
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm('Are you sure you want to delete this post?')) {
-      await api.deletePost(id);
-      fetchPosts();
+    if (window.confirm('Are you sure you want to delete this post?')) {
+      try {
+        await api.deletePost(id);
+        fetchPosts();
+      } catch (err) {
+        console.error('Failed to delete post', err);
+      }
     }
   };
 

@@ -6,9 +6,34 @@ import { useApp } from '../../App';
 import { Save, Globe, Palette, Type, Share2, Layout as LayoutIcon } from 'lucide-react';
 import { motion } from 'motion/react';
 
+const DEFAULT_SETTINGS: SiteSettings = {
+  siteName: 'Parallel Pages',
+  siteDescription: 'A blog about building and storytelling',
+  primaryColor: '#000000',
+  secondaryColor: '#ffffff',
+  accentColor: '#2563eb',
+  fontSans: 'Inter',
+  fontSerif: 'Playfair Display',
+  navigation: [
+    { label: 'Home', href: '/' },
+    { label: 'Blog', href: '/blog' },
+    { label: 'About', href: '/about' }
+  ],
+  socialLinks: {
+    twitter: '',
+    linkedin: '',
+    instagram: '',
+    youtube: ''
+  },
+  authorName: 'Mokshit Jain',
+  authorBio: 'Builder and storyteller.',
+  authorImage: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Mokshit',
+  themeMode: 'light'
+};
+
 export default function AdminSettings() {
   const { settings, refreshSettings } = useApp();
-  const [formData, setFormData] = useState<SiteSettings | null>(null);
+  const [formData, setFormData] = useState<SiteSettings>(settings || DEFAULT_SETTINGS);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
 
@@ -20,7 +45,6 @@ export default function AdminSettings() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData) return;
     setLoading(true);
     try {
       await api.updateSettings(formData);
@@ -28,13 +52,11 @@ export default function AdminSettings() {
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
     } catch (err) {
-      alert('Failed to update settings');
+      console.error('Failed to update settings', err);
     } finally {
       setLoading(false);
     }
   };
-
-  if (!formData) return <AdminLayout>Loading settings...</AdminLayout>;
 
   return (
     <AdminLayout>

@@ -16,8 +16,8 @@ export default function Home() {
   useEffect(() => {
     const fetchPosts = async () => {
       try {
-        const data = await api.getPosts();
-        setPosts(data.filter(p => p.status === 'published'));
+        const data = await api.getPublishedPosts();
+        setPosts(data);
       } catch (err) {
         console.error(err);
       } finally {

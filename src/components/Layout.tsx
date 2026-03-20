@@ -10,8 +10,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
   const location = useLocation();
 
-  if (!settings) return null;
-
   return (
     <div className="min-h-screen bg-white text-black font-sans selection:bg-blue-100 selection:text-blue-900">
       {/* Navigation */}

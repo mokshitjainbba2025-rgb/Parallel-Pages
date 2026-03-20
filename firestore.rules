@@ -1,0 +1,154 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: posts
+    // Document ID: postId
+    // Fields:
+    //   - id: string
+    //   - title: string
+    //   - slug: string
+    //   - content: string
+    //   - excerpt: string
+    //   - coverImage: string
+    //   - authorId: string
+    //   - authorName: string
+    //   - authorAvatar: string (optional)
+    //   - status: string (draft/published)
+    //   - publishedAt: timestamp
+    //   - createdAt: timestamp
+    //   - updatedAt: timestamp
+    //   - tags: list
+    //   - category: string
+    //   - readingTime: number
+    //   - seo: map
+    //
+    // Collection: settings
+    // Document ID: site
+    // Fields:
+    //   - siteName: string
+    //   - siteDescription: string
+    //   - primaryColor: string
+    //   - secondaryColor: string
+    //   - accentColor: string
+    //   - fontSans: string
+    //   - fontSerif: string
+    //   - logoUrl: string (optional)
+    //   - navigation: list
+    //   - socialLinks: map
+    //   - authorName: string
+    //   - authorBio: string
+    //   - authorImage: string
+    //   - themeMode: string
+    //
+    // Collection: users
+    // Document ID: userId
+    // Fields:
+    //   - uid: string
+    //   - email: string
+    //   - displayName: string
+    //   - photoURL: string (optional)
+    //   - bio: string (optional)
+    //   - role: string (admin/author)
+    //
+    // Collection: comments
+    // Document ID: commentId
+    // Fields:
+    //   - id: string
+    //   - postId: string
+    //   - authorName: string
+    //   - authorId: string (optional)
+    //   - content: string
+    //   - createdAt: timestamp
+    //
+    // Collection: subscribers
+    // Document ID: subscriberId
+    // Fields:
+    //   - email: string
+    //   - subscribedAt: timestamp
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+          (request.auth.token.email == "mokshit.jain.bba2025@atlasskilltech.university" && request.auth.token.email_verified == true));
+    }
+
+    function isAuthor() {
+      return isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'author';
+    }
+
+    function isValidPost(data) {
+      return data.title is string && data.title.size() > 0 && data.title.size() < 200 &&
+             data.slug is string && data.slug.size() > 0 && data.slug.size() < 200 &&
+             data.content is string && data.content.size() > 0 &&
+             data.status in ['draft', 'published'];
+    }
+
+    function isValidUser(data) {
+      return data.uid is string && data.uid == request.auth.uid &&
+             data.email is string && data.email.size() > 0 &&
+             data.role in ['admin', 'author'];
+    }
+
+    function isValidComment(data) {
+      return data.postId is string && data.content is string && data.content.size() > 0 && data.content.size() < 1000 &&
+             data.authorName is string && data.authorName.size() > 0;
+    }
+
+    function isValidSubscriber(data) {
+      return data.email is string && data.email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /posts/{postId} {
+      allow read: if resource.data.status == 'published' || isAdmin() || (isAuthenticated() && resource.data.authorId == request.auth.uid);
+      allow create: if (isAdmin() || isAuthor()) && isValidPost(request.resource.data) && request.resource.data.authorId == request.auth.uid;
+      allow update: if (isAdmin() || (isAuthor() && resource.data.authorId == request.auth.uid)) && isValidPost(request.resource.data) && request.resource.data.authorId == resource.data.authorId;
+      allow delete: if isAdmin() || (isAuthor() && resource.data.authorId == request.auth.uid);
+    }
+
+    match /settings/site {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isAuthenticated() && isValidUser(request.resource.data) && (request.resource.data.role == 'author' || isAdmin());
+      allow update: if isOwner(userId) && isValidUser(request.resource.data) && request.resource.data.role == resource.data.role;
+      allow delete: if isAdmin();
+    }
+
+    match /comments/{commentId} {
+      allow read: if true;
+      allow create: if isValidComment(request.resource.data);
+      allow update: if isAdmin() || (isAuthenticated() && resource.data.authorId == request.auth.uid);
+      allow delete: if isAdmin() || (isAuthenticated() && resource.data.authorId == request.auth.uid);
+    }
+
+    match /subscribers/{subscriberId} {
+      allow read: if isAdmin();
+      allow create: if isValidSubscriber(request.resource.data);
+      allow update, delete: if isAdmin();
+    }
+  }
+}
