@@ -59,7 +59,7 @@ export default function Contact() {
                 </div>
                 <div>
                   <p className="text-xs font-bold uppercase tracking-widest text-black/40">Email</p>
-                  <p className="font-bold">hello@parallelpages.com</p>
+                  <p className="font-bold">team.parallelpages@gmail.com</p>
                 </div>
               </div>
               <div className="flex items-center gap-6">
