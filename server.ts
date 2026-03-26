@@ -186,19 +186,6 @@ async function startServer() {
   app.use(express.json());
   app.use(cookieParser());
 
-  // Auth Middleware
-  const authenticate = (req: any, res: any, next: any) => {
-    const token = req.cookies.token;
-    if (!token) return res.status(401).json({ error: 'Unauthorized' });
-    try {
-      const decoded = jwt.verify(token, JWT_SECRET);
-      req.user = decoded;
-      next();
-    } catch (err) {
-      res.status(401).json({ error: 'Invalid token' });
-    }
-  };
-
   // --- SEO Routes ---
   const getBaseUrl = (req: express.Request) => {
     if (process.env.APP_URL) return process.env.APP_URL;
@@ -212,15 +199,16 @@ async function startServer() {
     const robots = `User-agent: *
 Allow: /
 Sitemap: ${baseUrl}/sitemap.xml`;
-    res.type('text/plain');
-    res.send(robots);
+    res.header('Content-Type', 'text/plain');
+    res.status(200).send(robots);
   });
 
   app.get('/sitemap.xml', (req, res) => {
-    const db = getDB();
-    const baseUrl = getBaseUrl(req);
-    
-    let sitemap = `<?xml version="1.0" encoding="UTF-8"?>
+    try {
+      const db = getDB();
+      const baseUrl = getBaseUrl(req);
+      
+      let sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>${baseUrl}/</loc>
@@ -253,20 +241,38 @@ Sitemap: ${baseUrl}/sitemap.xml`;
     <priority>0.3</priority>
   </url>`;
 
-    db.posts.filter((p: any) => p.status === 'published').forEach((post: any) => {
-      sitemap += `
+      db.posts.filter((p: any) => p.status === 'published').forEach((post: any) => {
+        sitemap += `
   <url>
     <loc>${baseUrl}/blog/${post.slug}</loc>
     <lastmod>${new Date(post.updatedAt || post.publishedAt).toISOString().split('T')[0]}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>`;
-    });
+      });
 
-    sitemap += '\n</urlset>';
-    res.type('application/xml');
-    res.send(sitemap);
+      sitemap += '\n</urlset>';
+      res.header('Content-Type', 'application/xml');
+      res.header('Cache-Control', 'public, max-age=0, must-revalidate');
+      res.status(200).send(sitemap);
+    } catch (error) {
+      console.error('Sitemap generation error:', error);
+      res.status(500).send('Error generating sitemap');
+    }
   });
+
+  // Auth Middleware
+  const authenticate = (req: any, res: any, next: any) => {
+    const token = req.cookies.token;
+    if (!token) return res.status(401).json({ error: 'Unauthorized' });
+    try {
+      const decoded = jwt.verify(token, JWT_SECRET);
+      req.user = decoded;
+      next();
+    } catch (err) {
+      res.status(401).json({ error: 'Invalid token' });
+    }
+  };
 
   // --- API Routes ---
 
