@@ -77,6 +77,7 @@ export const useApp = () => {
 };
 
 // Components
+import { HelmetProvider } from 'react-helmet-async';
 import Home from './pages/Home';
 import Blog from './pages/Blog';
 import SinglePost from './pages/SinglePost';
@@ -149,25 +150,27 @@ export default function App() {
 
   return (
     <ErrorBoundary>
-      <AppContext.Provider value={{ settings, user, loading, login, logout, refreshSettings }}>
-        <Router>
-          <Routes>
-            {/* Public Routes */}
-            <Route path="/" element={<Home />} />
-            <Route path="/blog" element={<Blog />} />
-            <Route path="/blog/:slug" element={<SinglePost />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/contact" element={<Contact />} />
-            <Route path="/newsletter" element={<Newsletter />} />
-            <Route path="/login" element={<Login />} />
+      <HelmetProvider>
+        <AppContext.Provider value={{ settings, user, loading, login, logout, refreshSettings }}>
+          <Router>
+            <Routes>
+              {/* Public Routes */}
+              <Route path="/" element={<Home />} />
+              <Route path="/blog" element={<Blog />} />
+              <Route path="/blog/:slug" element={<SinglePost />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/contact" element={<Contact />} />
+              <Route path="/newsletter" element={<Newsletter />} />
+              <Route path="/login" element={<Login />} />
 
-            {/* Admin Routes */}
-            <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
-            <Route path="/admin/posts" element={<ProtectedRoute><AdminPosts /></ProtectedRoute>} />
-            <Route path="/admin/settings" element={<ProtectedRoute><AdminSettings /></ProtectedRoute>} />
-          </Routes>
-        </Router>
-      </AppContext.Provider>
+              {/* Admin Routes */}
+              <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
+              <Route path="/admin/posts" element={<ProtectedRoute><AdminPosts /></ProtectedRoute>} />
+              <Route path="/admin/settings" element={<ProtectedRoute><AdminSettings /></ProtectedRoute>} />
+            </Routes>
+          </Router>
+        </AppContext.Provider>
+      </HelmetProvider>
     </ErrorBoundary>
   );
 }

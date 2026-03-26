@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import Layout from '../components/Layout';
 import { Post } from '../types';
 import { api } from '../services/api';
@@ -52,6 +53,19 @@ export default function SinglePost() {
 
   return (
     <Layout>
+      <Helmet>
+        <title>{post.seo?.title || `${post.title} | ${settings?.siteName || 'Parallel Pages'}`}</title>
+        <meta name="description" content={post.seo?.description || post.excerpt} />
+        <meta property="og:title" content={post.seo?.title || post.title} />
+        <meta property="og:description" content={post.seo?.description || post.excerpt} />
+        <meta property="og:image" content={post.coverImage} />
+        <meta property="og:type" content="article" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={post.seo?.title || post.title} />
+        <meta name="twitter:description" content={post.seo?.description || post.excerpt} />
+        <meta name="twitter:image" content={post.coverImage} />
+        <link rel="canonical" href={`${window.location.origin}/blog/${post.slug}`} />
+      </Helmet>
       {/* Reading Progress Bar */}
       <motion.div
         className="fixed top-20 left-0 right-0 h-1 bg-blue-600 origin-left z-50"

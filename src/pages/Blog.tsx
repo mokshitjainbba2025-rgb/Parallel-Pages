@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Helmet } from 'react-helmet-async';
 import Layout from '../components/Layout';
 import { Post } from '../types';
 import { api } from '../services/api';
@@ -54,6 +55,15 @@ export default function Blog() {
 
   return (
     <Layout>
+      <Helmet>
+        <title>Blog | {settings?.siteName || 'Parallel Pages'}</title>
+        <meta name="description" content={`Explore the latest insights on entrepreneurship, technology, and personal growth on the ${settings?.siteName || 'Parallel Pages'} blog.`} />
+        <meta property="og:title" content={`Blog | ${settings?.siteName || 'Parallel Pages'}`} />
+        <meta property="og:description" content={`Explore the latest insights on entrepreneurship, technology, and personal growth on the ${settings?.siteName || 'Parallel Pages'} blog.`} />
+        <meta property="og:type" content="website" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <link rel="canonical" href={`${window.location.origin}/blog`} />
+      </Helmet>
       <header className="mb-16">
         <h1 className="text-5xl md:text-7xl font-serif font-bold mb-8">The Blog</h1>
         <div className="flex flex-col md:flex-row gap-6 justify-between items-start md:items-center">

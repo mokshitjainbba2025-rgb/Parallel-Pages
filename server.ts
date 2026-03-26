@@ -199,6 +199,58 @@ async function startServer() {
     }
   };
 
+  // --- SEO Routes ---
+
+  app.get('/robots.txt', (req, res) => {
+    const robots = `User-agent: *
+Allow: /
+Sitemap: ${req.protocol}://${req.get('host')}/sitemap.xml`;
+    res.type('text/plain');
+    res.send(robots);
+  });
+
+  app.get('/sitemap.xml', (req, res) => {
+    const db = getDB();
+    const baseUrl = `${req.protocol}://${req.get('host')}`;
+    
+    let sitemap = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>${baseUrl}/</loc>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>${baseUrl}/blog</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>${baseUrl}/about</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>${baseUrl}/contact</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>`;
+
+    db.posts.filter((p: any) => p.status === 'published').forEach((post: any) => {
+      sitemap += `
+  <url>
+    <loc>${baseUrl}/blog/${post.slug}</loc>
+    <lastmod>${new Date(post.updatedAt || post.publishedAt).toISOString().split('T')[0]}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>`;
+    });
+
+    sitemap += '\n</urlset>';
+    res.type('application/xml');
+    res.send(sitemap);
+  });
+
   // --- API Routes ---
 
   // Auth

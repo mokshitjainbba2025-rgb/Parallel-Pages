@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Helmet } from 'react-helmet-async';
 import Layout from '../components/Layout';
 import { motion } from 'motion/react';
 import { Send, Mail, MapPin, Phone } from 'lucide-react';
@@ -39,6 +40,15 @@ export default function Contact() {
 
   return (
     <Layout>
+      <Helmet>
+        <title>Contact | Parallel Pages</title>
+        <meta name="description" content="Get in touch with the Parallel Pages team. We'd love to hear your questions, story ideas, or feedback." />
+        <meta property="og:title" content="Contact | Parallel Pages" />
+        <meta property="og:description" content="Get in touch with the Parallel Pages team. We'd love to hear your questions, story ideas, or feedback." />
+        <meta property="og:type" content="website" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <link rel="canonical" href={`${window.location.origin}/contact`} />
+      </Helmet>
       <div className="max-w-6xl mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-20">
           <motion.div

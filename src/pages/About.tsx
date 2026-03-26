@@ -1,4 +1,5 @@
 import React from 'react';
+import { Helmet } from 'react-helmet-async';
 import Layout from '../components/Layout';
 import { useApp } from '../App';
 import { motion } from 'motion/react';
@@ -7,6 +8,15 @@ export default function About() {
   const { settings } = useApp();
   return (
     <Layout>
+      <Helmet>
+        <title>About | {settings?.siteName || 'Parallel Pages'}</title>
+        <meta name="description" content={`Learn about the vision behind ${settings?.siteName || 'Parallel Pages'}, a minimalist space for entrepreneurs, builders, and lifelong learners.`} />
+        <meta property="og:title" content={`About | ${settings?.siteName || 'Parallel Pages'}`} />
+        <meta property="og:description" content={`Learn about the vision behind ${settings?.siteName || 'Parallel Pages'}, a minimalist space for entrepreneurs, builders, and lifelong learners.`} />
+        <meta property="og:type" content="website" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <link rel="canonical" href={`${window.location.origin}/about`} />
+      </Helmet>
       <div className="max-w-4xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}

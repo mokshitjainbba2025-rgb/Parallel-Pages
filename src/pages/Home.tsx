@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Helmet } from 'react-helmet-async';
 import Layout from '../components/Layout';
 import { Post } from '../types';
 import { api } from '../services/api';
@@ -32,6 +33,15 @@ export default function Home() {
 
   return (
     <Layout>
+      <Helmet>
+        <title>{settings?.siteName || 'Parallel Pages'} | Stories that parallel your journey</title>
+        <meta name="description" content={settings?.siteDescription || 'A minimalist space for entrepreneurs, builders, and lifelong learners to share insights and document growth.'} />
+        <meta property="og:title" content={settings?.siteName || 'Parallel Pages'} />
+        <meta property="og:description" content={settings?.siteDescription || 'A minimalist space for entrepreneurs, builders, and lifelong learners to share insights and document growth.'} />
+        <meta property="og:type" content="website" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <link rel="canonical" href={window.location.origin} />
+      </Helmet>
       {/* Hero Section */}
       <section className="mb-24">
         <motion.div
