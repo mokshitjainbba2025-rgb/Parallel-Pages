@@ -8,9 +8,10 @@ import multer from 'multer';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const DB_FILE = process.env.NODE_ENV === 'production' 
+const DB_FILE = (process.env.VERCEL || process.env.NODE_ENV === 'production')
   ? path.join('/tmp', 'db.json') 
-  : path.join(__dirname, 'db.json');
+  : path.join(process.cwd(), 'db.json');
+const TEMPLATE_DB = path.join(process.cwd(), 'db.json');
 const JWT_SECRET = process.env.JWT_SECRET || 'parallel-pages-secret-key';
 
 // Initial Data
@@ -153,7 +154,7 @@ const initialData = {
     {
       uid: 'admin',
       email: 'admin@parallelpages.com',
-      password: bcrypt.hashSync('admin123', 10),
+      password: '$2a$10$1k7XLC4TRWH93H5BVTkuaOEf2a6V4lMM5SAM267Ka/JBaIMmdcSUG',
       displayName: 'Mokshit Jain',
       role: 'admin'
     }
@@ -163,20 +164,31 @@ const initialData = {
 
 // Database Helper
 function getDB() {
-  if (!fs.existsSync(DB_FILE)) {
-    // On Vercel, we might need to copy the initial db from the project root to /tmp
-    const templatePath = path.join(__dirname, 'db.json');
-    if (fs.existsSync(templatePath)) {
-      fs.writeFileSync(DB_FILE, fs.readFileSync(templatePath, 'utf-8'));
-    } else {
-      fs.writeFileSync(DB_FILE, JSON.stringify(initialData, null, 2));
+  try {
+    if (!fs.existsSync(DB_FILE)) {
+      console.log('Initializing database at:', DB_FILE);
+      if (fs.existsSync(TEMPLATE_DB)) {
+        console.log('Copying template from:', TEMPLATE_DB);
+        fs.writeFileSync(DB_FILE, fs.readFileSync(TEMPLATE_DB, 'utf-8'));
+      } else {
+        console.log('Template not found, using initialData');
+        fs.writeFileSync(DB_FILE, JSON.stringify(initialData, null, 2));
+      }
     }
+    const content = fs.readFileSync(DB_FILE, 'utf-8');
+    return JSON.parse(content);
+  } catch (error) {
+    console.error('Database read error:', error);
+    return initialData;
   }
-  return JSON.parse(fs.readFileSync(DB_FILE, 'utf-8'));
 }
 
 function saveDB(data: any) {
-  fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2));
+  try {
+    fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2));
+  } catch (error) {
+    console.error('Database save error:', error);
+  }
 }
 
 async function startServer() {
