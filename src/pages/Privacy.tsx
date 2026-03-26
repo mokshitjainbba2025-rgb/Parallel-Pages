@@ -27,7 +27,7 @@ export default function Privacy() {
 
           <section className="mb-12">
             <h2 className="text-2xl font-bold mb-4">2. How We Use Your Information</h2>
-            <p className="text-black/60 leading-relaxed">
+            <div className="text-black/60 leading-relaxed">
               We use the information we collect to:
               <ul className="list-disc pl-6 mt-4 space-y-2">
                 <li>Provide, maintain, and improve our services.</li>
@@ -35,7 +35,7 @@ export default function Privacy() {
                 <li>Respond to your comments, questions, and requests.</li>
                 <li>Monitor and analyze trends, usage, and activities in connection with our services.</li>
               </ul>
-            </p>
+            </div>
           </section>
 
           <section className="mb-12">
