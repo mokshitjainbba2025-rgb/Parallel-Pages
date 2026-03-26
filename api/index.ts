@@ -1,4 +1,4 @@
-import appPromise from '../server.js';
+import appPromise from '../server';
 
 export default async (req: any, res: any) => {
   try {
@@ -6,6 +6,6 @@ export default async (req: any, res: any) => {
     return app(req, res);
   } catch (error) {
     console.error('Error in Vercel function:', error);
-    res.status(500).json({ error: 'Internal Server Error' });
+    res.status(500).json({ error: 'Internal Server Error', details: error instanceof Error ? error.message : String(error) });
   }
 };

@@ -188,11 +188,14 @@ async function startServer() {
 
   // --- SEO Routes ---
   const getBaseUrl = (req: express.Request) => {
-    if (process.env.APP_URL) return process.env.APP_URL;
     const host = req.get('host') || '';
     const protocol = host.includes('localhost') ? 'http' : 'https';
     return `${protocol}://${host}`;
   };
+
+  app.get('/api/health', (req, res) => {
+    res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  });
 
   app.get('/robots.txt', (req, res) => {
     const baseUrl = getBaseUrl(req);
@@ -252,8 +255,8 @@ Sitemap: ${baseUrl}/sitemap.xml`;
       });
 
       sitemap += '\n</urlset>';
-      res.header('Content-Type', 'application/xml');
-      res.header('Cache-Control', 'public, max-age=0, must-revalidate');
+      res.type('application/xml');
+      res.set('Cache-Control', 'public, max-age=0, must-revalidate');
       res.status(200).send(sitemap);
     } catch (error) {
       console.error('Sitemap generation error:', error);
