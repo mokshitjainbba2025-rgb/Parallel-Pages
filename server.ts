@@ -200,18 +200,25 @@ async function startServer() {
   };
 
   // --- SEO Routes ---
+  const getBaseUrl = (req: express.Request) => {
+    if (process.env.APP_URL) return process.env.APP_URL;
+    const host = req.get('host') || '';
+    const protocol = host.includes('localhost') ? 'http' : 'https';
+    return `${protocol}://${host}`;
+  };
 
   app.get('/robots.txt', (req, res) => {
+    const baseUrl = getBaseUrl(req);
     const robots = `User-agent: *
 Allow: /
-Sitemap: ${req.protocol}://${req.get('host')}/sitemap.xml`;
+Sitemap: ${baseUrl}/sitemap.xml`;
     res.type('text/plain');
     res.send(robots);
   });
 
   app.get('/sitemap.xml', (req, res) => {
     const db = getDB();
-    const baseUrl = `${req.protocol}://${req.get('host')}`;
+    const baseUrl = getBaseUrl(req);
     
     let sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
@@ -234,6 +241,16 @@ Sitemap: ${req.protocol}://${req.get('host')}/sitemap.xml`;
     <loc>${baseUrl}/contact</loc>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>${baseUrl}/terms</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>${baseUrl}/privacy</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
   </url>`;
 
     db.posts.filter((p: any) => p.status === 'published').forEach((post: any) => {

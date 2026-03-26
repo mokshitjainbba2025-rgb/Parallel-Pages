@@ -131,6 +131,26 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               </ul>
             </div>
             <div>
+              <h3 className="text-xs font-bold uppercase tracking-widest text-black/40 mb-6">Legal</h3>
+              <ul className="space-y-4">
+                <li>
+                  <Link to="/terms" className="text-sm font-medium hover:text-blue-600 transition-colors">
+                    Terms & Conditions
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/privacy" className="text-sm font-medium hover:text-blue-600 transition-colors">
+                    Privacy Policy
+                  </Link>
+                </li>
+                <li>
+                  <a href="/sitemap.xml" target="_blank" className="text-sm font-medium hover:text-blue-600 transition-colors">
+                    Sitemap
+                  </a>
+                </li>
+              </ul>
+            </div>
+            <div>
               <h3 className="text-xs font-bold uppercase tracking-widest text-black/40 mb-6">Newsletter</h3>
               <p className="text-sm text-black/60 mb-4">Get the latest stories delivered to your inbox.</p>
               <Link to="/newsletter" className="inline-block text-sm font-bold text-blue-600 hover:underline">

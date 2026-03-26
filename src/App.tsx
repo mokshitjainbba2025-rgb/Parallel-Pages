@@ -88,6 +88,8 @@ import AdminDashboard from './pages/admin/Dashboard';
 import AdminPosts from './pages/admin/Posts';
 import AdminSettings from './pages/admin/Settings';
 import Login from './pages/Login';
+import Terms from './pages/Terms';
+import Privacy from './pages/Privacy';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useApp();
@@ -162,6 +164,8 @@ export default function App() {
               <Route path="/contact" element={<Contact />} />
               <Route path="/newsletter" element={<Newsletter />} />
               <Route path="/login" element={<Login />} />
+              <Route path="/terms" element={<Terms />} />
+              <Route path="/privacy" element={<Privacy />} />
 
               {/* Admin Routes */}
               <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
