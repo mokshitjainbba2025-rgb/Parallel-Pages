@@ -20,7 +20,7 @@ import {
   User
 } from 'firebase/auth';
 import { db, auth } from '../lib/firebase';
-import { Post, SiteSettings, UserProfile } from '../types';
+import { Post, SiteSettings, UserProfile, Contributor } from '../types';
 import { DEFAULT_SETTINGS } from '../constants';
 
 export enum OperationType {
@@ -221,6 +221,48 @@ export const api = {
     const path = `posts/${id}`;
     try {
       await deleteDoc(doc(db, 'posts', id));
+    } catch (error) {
+      handleFirestoreError(error, OperationType.DELETE, path);
+    }
+  },
+
+  // Contributors
+  async getContributors(): Promise<Contributor[]> {
+    const path = 'contributors';
+    try {
+      const querySnapshot = await getDocs(collection(db, 'contributors'));
+      return querySnapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() as any) } as Contributor));
+    } catch (error) {
+      handleFirestoreError(error, OperationType.LIST, path);
+      return [];
+    }
+  },
+
+  async createContributor(contributor: Partial<Contributor>) {
+    const path = 'contributors';
+    try {
+      const newRef = doc(collection(db, 'contributors'));
+      const data = { ...contributor, id: newRef.id };
+      await setDoc(newRef, data);
+      return data;
+    } catch (error) {
+      handleFirestoreError(error, OperationType.CREATE, path);
+    }
+  },
+
+  async updateContributor(id: string, contributor: Partial<Contributor>) {
+    const path = `contributors/${id}`;
+    try {
+      await updateDoc(doc(db, 'contributors', id), contributor);
+    } catch (error) {
+      handleFirestoreError(error, OperationType.UPDATE, path);
+    }
+  },
+
+  async deleteContributor(id: string) {
+    const path = `contributors/${id}`;
+    try {
+      await deleteDoc(doc(db, 'contributors', id));
     } catch (error) {
       handleFirestoreError(error, OperationType.DELETE, path);
     }

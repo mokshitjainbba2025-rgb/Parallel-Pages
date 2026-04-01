@@ -70,6 +70,15 @@ service cloud.firestore {
     //   - email: string
     //   - subscribedAt: timestamp
     //
+    // Collection: contributors
+    // Document ID: contributorId
+    // Fields:
+    //   - id: string
+    //   - name: string
+    //   - bio: string
+    //   - image: string
+    //   - social: map
+    //
     // ===============================================================
 
     // ===============================================================
@@ -115,6 +124,12 @@ service cloud.firestore {
       return data.email is string && data.email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
     }
 
+    function isValidContributor(data) {
+      return data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+             data.bio is string && data.bio.size() > 0 && data.bio.size() < 1000 &&
+             data.image is string && data.image.size() > 0;
+    }
+
     // ===============================================================
     // Rules
     // ===============================================================
@@ -149,6 +164,11 @@ service cloud.firestore {
       allow read: if isAdmin();
       allow create: if isValidSubscriber(request.resource.data);
       allow update, delete: if isAdmin();
+    }
+
+    match /contributors/{contributorId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
     }
   }
 }

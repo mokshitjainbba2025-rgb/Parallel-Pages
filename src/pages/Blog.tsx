@@ -1,17 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import Layout from '../components/Layout';
-import { Post } from '../types';
+import { Post, Contributor } from '../types';
 import { api } from '../services/api';
 import { useApp } from '../App';
 import { Link } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { formatDate } from '../lib/utils';
-import { Search, Filter } from 'lucide-react';
+import { Search, Filter, ChevronRight } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 export default function Blog() {
   const [posts, setPosts] = useState<Post[]>([]);
+  const [contributors, setContributors] = useState<Contributor[]>([]);
   const { settings } = useApp();
   const [filteredPosts, setFilteredPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
@@ -19,18 +20,22 @@ export default function Blog() {
   const [activeCategory, setActiveCategory] = useState('All');
 
   useEffect(() => {
-    const fetchPosts = async () => {
+    const fetchData = async () => {
       try {
-        const data = await api.getPublishedPosts();
-        setPosts(data);
-        setFilteredPosts(data);
+        const [postsData, contributorsData] = await Promise.all([
+          api.getPublishedPosts(),
+          api.getContributors()
+        ]);
+        setPosts(postsData);
+        setFilteredPosts(postsData);
+        setContributors(contributorsData);
       } catch (err) {
         console.error(err);
       } finally {
         setLoading(false);
       }
     };
-    fetchPosts();
+    fetchData();
   }, []);
 
   useEffect(() => {
@@ -65,7 +70,15 @@ export default function Blog() {
         <link rel="canonical" href={`${window.location.origin}/blog`} />
       </Helmet>
       <header className="mb-16">
-        <h1 className="text-5xl md:text-7xl font-serif font-bold mb-8">The Blog</h1>
+        <div className="flex items-center justify-between mb-8">
+          <h1 className="text-5xl md:text-7xl font-serif font-bold">Voices of Parallel Pages</h1>
+          <Link to="/voices" className="hidden md:flex items-center gap-2 text-sm font-bold text-blue-600 hover:underline">
+            Meet the Contributors <ChevronRight size={16} />
+          </Link>
+        </div>
+        <p className="text-xl text-black/60 max-w-2xl mb-12 font-serif italic">
+          "Real Stories. Real Operators. From the Ground."
+        </p>
         <div className="flex flex-col md:flex-row gap-6 justify-between items-start md:items-center">
           {/* Categories */}
           <div className="flex flex-wrap gap-2">
@@ -146,9 +159,22 @@ export default function Blog() {
               <div className="flex items-center justify-between pt-6 border-t border-black/5">
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-full bg-gray-200 overflow-hidden">
-                    <img src={settings?.authorImage || `https://api.dicebear.com/7.x/avataaars/svg?seed=${post.authorName}`} alt={post.authorName} />
+                    {post.contributorId ? (
+                      <img 
+                        src={contributors.find(c => c.id === post.contributorId)?.image || `https://api.dicebear.com/7.x/avataaars/svg?seed=${post.authorName}`} 
+                        alt={contributors.find(c => c.id === post.contributorId)?.name || post.authorName} 
+                        referrerPolicy="no-referrer"
+                      />
+                    ) : (
+                      <img src={settings?.authorImage || `https://api.dicebear.com/7.x/avataaars/svg?seed=${post.authorName}`} alt={post.authorName} referrerPolicy="no-referrer" />
+                    )}
                   </div>
-                  <span className="text-xs font-bold">{settings?.authorName || post.authorName}</span>
+                  <span className="text-xs font-bold">
+                    {post.contributorId 
+                      ? contributors.find(c => c.id === post.contributorId)?.name || post.authorName
+                      : settings?.authorName || post.authorName
+                    }
+                  </span>
                 </div>
                 <span className="text-[10px] font-bold text-black/40 uppercase tracking-widest">{post.readingTime} min read</span>
               </div>

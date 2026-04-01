@@ -84,8 +84,10 @@ import SinglePost from './pages/SinglePost';
 import About from './pages/About';
 import Contact from './pages/Contact';
 import Newsletter from './pages/Newsletter';
+import Voices from './pages/Voices';
 import AdminDashboard from './pages/admin/Dashboard';
 import AdminPosts from './pages/admin/Posts';
+import AdminContributors from './pages/admin/Contributors';
 import AdminSettings from './pages/admin/Settings';
 import Login from './pages/Login';
 import Terms from './pages/Terms';
@@ -162,6 +164,7 @@ export default function App() {
               <Route path="/blog/:slug" element={<SinglePost />} />
               <Route path="/about" element={<About />} />
               <Route path="/contact" element={<Contact />} />
+              <Route path="/voices" element={<Voices />} />
               <Route path="/newsletter" element={<Newsletter />} />
               <Route path="/login" element={<Login />} />
               <Route path="/terms" element={<Terms />} />
@@ -170,6 +173,7 @@ export default function App() {
               {/* Admin Routes */}
               <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
               <Route path="/admin/posts" element={<ProtectedRoute><AdminPosts /></ProtectedRoute>} />
+              <Route path="/admin/contributors" element={<ProtectedRoute><AdminContributors /></ProtectedRoute>} />
               <Route path="/admin/settings" element={<ProtectedRoute><AdminSettings /></ProtectedRoute>} />
             </Routes>
           </Router>

@@ -159,6 +159,18 @@ const initialData = {
       role: 'admin'
     }
   ],
+  contributors: [
+    {
+      id: '1',
+      name: 'Aarush',
+      bio: 'Aarush is a tech enthusiast and builder with a passion for exploring the intersection of AI and human creativity.',
+      image: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Aarush',
+      social: {
+        twitter: 'https://twitter.com/aarush',
+        linkedin: 'https://linkedin.com/in/aarush'
+      }
+    }
+  ],
   subscribers: []
 };
 
@@ -379,6 +391,43 @@ Sitemap: ${baseUrl}/sitemap.xml`;
     db.settings = { ...db.settings, ...req.body };
     saveDB(db);
     res.json(db.settings);
+  });
+
+  // Contributors
+  app.get('/api/contributors', (req, res) => {
+    const db = getDB();
+    res.json(db.contributors || []);
+  });
+
+  app.post('/api/contributors', authenticate, (req, res) => {
+    const db = getDB();
+    if (!db.contributors) db.contributors = [];
+    const newContributor = {
+      ...req.body,
+      id: Date.now().toString()
+    };
+    db.contributors.push(newContributor);
+    saveDB(db);
+    res.json(newContributor);
+  });
+
+  app.put('/api/contributors/:id', authenticate, (req, res) => {
+    const db = getDB();
+    const index = db.contributors.findIndex((c: any) => c.id === req.params.id);
+    if (index !== -1) {
+      db.contributors[index] = { ...db.contributors[index], ...req.body };
+      saveDB(db);
+      res.json(db.contributors[index]);
+    } else {
+      res.status(404).json({ error: 'Contributor not found' });
+    }
+  });
+
+  app.delete('/api/contributors/:id', authenticate, (req, res) => {
+    const db = getDB();
+    db.contributors = db.contributors.filter((c: any) => c.id !== req.params.id);
+    saveDB(db);
+    res.json({ success: true });
   });
 
   // Newsletter

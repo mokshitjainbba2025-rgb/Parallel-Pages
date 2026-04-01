@@ -1,15 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import AdminLayout from '../../components/AdminLayout';
 import { api } from '../../services/api';
-import { Post } from '../../types';
+import { Post, Contributor } from '../../types';
 import { useApp } from '../../App';
-import { Plus, Search, MoreVertical, Edit2, Trash2, ExternalLink, X, Save, Image as ImageIcon, Tag, Layout as LayoutIcon } from 'lucide-react';
+import { Plus, Search, MoreVertical, Edit2, Trash2, ExternalLink, X, Save, Image as ImageIcon, Tag, Layout as LayoutIcon, User as UserIcon } from 'lucide-react';
 import { formatDate } from '../../lib/utils';
 import { useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 
 export default function AdminPosts() {
   const [posts, setPosts] = useState<Post[]>([]);
+  const [contributors, setContributors] = useState<Contributor[]>([]);
   const { settings, user } = useApp();
   const [loading, setLoading] = useState(true);
   const [searchParams, setSearchParams] = useSearchParams();
@@ -21,6 +22,7 @@ export default function AdminPosts() {
 
   useEffect(() => {
     fetchPosts();
+    fetchContributors();
   }, []);
 
   useEffect(() => {
@@ -40,6 +42,7 @@ export default function AdminPosts() {
         category: 'General',
         tags: [],
         status: 'draft',
+        contributorId: '',
         seo: { title: '', description: '' }
       });
       setIsEditorOpen(true);
@@ -57,6 +60,15 @@ export default function AdminPosts() {
       console.error(err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchContributors = async () => {
+    try {
+      const data = await api.getContributors();
+      setContributors(data);
+    } catch (err) {
+      console.error(err);
     }
   };
 
@@ -82,13 +94,11 @@ export default function AdminPosts() {
   };
 
   const handleDelete = async (id: string) => {
-    if (window.confirm('Are you sure you want to delete this post?')) {
-      try {
-        await api.deletePost(id);
-        fetchPosts();
-      } catch (err) {
-        console.error('Failed to delete post', err);
-      }
+    try {
+      await api.deletePost(id);
+      fetchPosts();
+    } catch (err) {
+      console.error('Failed to delete post', err);
     }
   };
 
@@ -117,7 +127,7 @@ export default function AdminPosts() {
             <tr className="bg-gray-50 border-b border-gray-100">
               <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-gray-400">Post</th>
               <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-gray-400">Status</th>
-              <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-gray-400">Category</th>
+              <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-gray-400">Contributor</th>
               <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-gray-400">Date</th>
               <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-gray-400 text-right">Actions</th>
             </tr>
@@ -138,12 +148,16 @@ export default function AdminPosts() {
                 </td>
                 <td className="px-6 py-4">
                   <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest ${
-                    post.status === 'published' ? 'bg-green-50 text-green-600' : 'bg-orange-50 text-orange-600'
+                    post.status === 'published' ? 'bg-green-50 text-green-600' : 
+                    post.status === 'review' ? 'bg-blue-50 text-blue-600' :
+                    'bg-orange-50 text-orange-600'
                   }`}>
                     {post.status}
                   </span>
                 </td>
-                <td className="px-6 py-4 text-sm text-gray-500">{post.category}</td>
+                <td className="px-6 py-4 text-sm text-gray-500">
+                  {contributors.find(c => c.id === post.contributorId)?.name || 'None'}
+                </td>
                 <td className="px-6 py-4 text-sm text-gray-500">{formatDate(post.publishedAt)}</td>
                 <td className="px-6 py-4 text-right">
                   <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -205,6 +219,7 @@ export default function AdminPosts() {
                     className="bg-gray-100 px-4 py-2 rounded-xl text-sm font-bold focus:outline-none"
                   >
                     <option value="draft">Draft</option>
+                    <option value="review">Review</option>
                     <option value="published">Published</option>
                   </select>
                   <button
@@ -243,6 +258,22 @@ export default function AdminPosts() {
                         <LayoutIcon size={16} /> Post Settings
                       </h3>
                       
+                      <div>
+                        <label className="block text-xs font-bold text-gray-500 mb-2 uppercase flex items-center gap-1">
+                          <UserIcon size={12} /> Contributor
+                        </label>
+                        <select
+                          value={editingPost.contributorId || ''}
+                          onChange={(e) => setEditingPost({ ...editingPost, contributorId: e.target.value })}
+                          className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-blue-500"
+                        >
+                          <option value="">None (Personal Post)</option>
+                          {contributors.map(c => (
+                            <option key={c.id} value={c.id}>{c.name}</option>
+                          ))}
+                        </select>
+                      </div>
+
                       <div>
                         <label className="block text-xs font-bold text-gray-500 mb-2 uppercase">Slug</label>
                         <input

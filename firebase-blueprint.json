@@ -107,6 +107,27 @@
         "subscribedAt": { "type": "object", "description": "Firebase Timestamp" }
       },
       "required": ["email"]
+    },
+    "Contributor": {
+      "title": "Contributor",
+      "description": "A guest contributor or author",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "bio": { "type": "string" },
+        "image": { "type": "string" },
+        "social": {
+          "type": "object",
+          "properties": {
+            "twitter": { "type": "string" },
+            "linkedin": { "type": "string" },
+            "github": { "type": "string" },
+            "website": { "type": "string" }
+          }
+        }
+      },
+      "required": ["name", "bio", "image"]
     }
   },
   "firestore": {
@@ -129,6 +150,10 @@
     "/subscribers/{subscriberId}": {
       "schema": "NewsletterSubscriber",
       "description": "Collection of newsletter subscribers"
+    },
+    "/contributors/{contributorId}": {
+      "schema": "Contributor",
+      "description": "Collection of guest contributors"
     }
   }
 }

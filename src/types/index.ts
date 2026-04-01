@@ -1,3 +1,16 @@
+export interface Contributor {
+  id: string;
+  name: string;
+  bio: string;
+  image: string;
+  social?: {
+    twitter?: string;
+    linkedin?: string;
+    github?: string;
+    website?: string;
+  };
+}
+
 export interface Post {
   id: string;
   title: string;
@@ -8,8 +21,9 @@ export interface Post {
   authorId: string;
   authorName: string;
   authorAvatar?: string;
-  status: 'draft' | 'published';
-  publishedAt: any; // Firebase Timestamp
+  contributorId?: string; // New field
+  status: 'draft' | 'review' | 'published'; // Updated status
+  publishedAt: any; // Firebase Timestamp or ISO string
   createdAt: any;
   updatedAt: any;
   tags: string[];
