@@ -66,6 +66,7 @@ interface AppContextType {
   login: () => Promise<void>;
   logout: () => Promise<void>;
   refreshSettings: () => Promise<void>;
+  refreshUser: () => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -115,6 +116,13 @@ export default function App() {
     }
   };
 
+  const refreshUser = async () => {
+    if (user?.uid) {
+      const profile = await api.getUserProfile(user.uid);
+      setUser(profile);
+    }
+  };
+
   useEffect(() => {
     const unsubscribe = api.onAuthChange(async (firebaseUser) => {
       if (firebaseUser) {
@@ -155,7 +163,7 @@ export default function App() {
   return (
     <ErrorBoundary>
       <HelmetProvider>
-        <AppContext.Provider value={{ settings, user, loading, login, logout, refreshSettings }}>
+        <AppContext.Provider value={{ settings, user, loading, login, logout, refreshSettings, refreshUser }}>
           <Router>
             <Routes>
               {/* Public Routes */}

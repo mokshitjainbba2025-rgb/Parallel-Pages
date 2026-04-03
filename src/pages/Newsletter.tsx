@@ -3,20 +3,25 @@ import Layout from '../components/Layout';
 import { motion } from 'motion/react';
 import { Mail, CheckCircle2, ArrowRight } from 'lucide-react';
 import { api } from '../services/api';
+import { useApp } from '../App';
 
 export default function Newsletter() {
-  const [email, setEmail] = useState('');
+  const { user, refreshUser } = useApp();
+  const [email, setEmail] = useState(user?.email || '');
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setError(null);
     try {
       await api.subscribe(email);
+      await refreshUser();
       setSubmitted(true);
     } catch (err) {
-      alert('Subscription failed. Please try again.');
+      setError('Subscription failed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -71,6 +76,9 @@ export default function Newsletter() {
                   placeholder="name@example.com"
                 />
               </div>
+              {error && (
+                <p className="text-red-600 text-sm text-center">{error}</p>
+              )}
               <button
                 type="submit"
                 disabled={loading}

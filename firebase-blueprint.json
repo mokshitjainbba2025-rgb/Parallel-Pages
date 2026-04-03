@@ -93,10 +93,14 @@
         "postId": { "type": "string" },
         "authorName": { "type": "string" },
         "authorId": { "type": "string" },
+        "authorAvatar": { "type": "string" },
         "content": { "type": "string" },
-        "createdAt": { "type": "object", "description": "Firebase Timestamp" }
+        "createdAt": { "type": "object", "description": "Firebase Timestamp" },
+        "status": { "type": "string", "enum": ["pending", "approved", "rejected"] },
+        "parentCommentId": { "type": "string" },
+        "isTeamReply": { "type": "boolean" }
       },
-      "required": ["postId", "authorName", "content"]
+      "required": ["postId", "authorName", "authorId", "content", "status"]
     },
     "NewsletterSubscriber": {
       "title": "NewsletterSubscriber",

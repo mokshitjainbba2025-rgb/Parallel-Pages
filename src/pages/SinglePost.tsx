@@ -11,6 +11,7 @@ import ReactMarkdown from 'react-markdown';
 import { Share2, Bookmark, Clock, ChevronLeft, Twitter, Linkedin } from 'lucide-react';
 import { VerifiedBadge } from '../components/blog/VerifiedBadge';
 import { ContributorBox } from '../components/blog/ContributorBox';
+import CommentSection from '../components/blog/CommentSection';
 
 export default function SinglePost() {
   const { slug } = useParams<{ slug: string }>();
@@ -69,14 +70,13 @@ export default function SinglePost() {
     "author": [
       {
         "@type": "Person",
-        "name": contributor?.name || post.authorName,
+        "name": contributor?.name || "Team Parallel Pages",
         "url": contributor ? `${window.location.origin}/voices` : `${window.location.origin}/about`
       },
       {
-        "@type": "Person",
-        "name": "Mokshit Jain",
-        "url": `${window.location.origin}/about`,
-        "jobTitle": "Publisher"
+        "@type": "Organization",
+        "name": "Team Parallel Pages",
+        "url": `${window.location.origin}/about`
       }
     ],
     "publisher": {
@@ -138,17 +138,17 @@ export default function SinglePost() {
             <div className="flex items-center gap-4">
               <div className="w-14 h-14 rounded-full bg-gray-200 overflow-hidden">
                 <img 
-                  src={contributor?.image || settings?.authorImage || `https://api.dicebear.com/7.x/avataaars/svg?seed=${post.authorName}`} 
-                  alt={contributor?.name || post.authorName} 
+                  src={contributor?.image || settings?.authorImage || `https://api.dicebear.com/7.x/avataaars/svg?seed=Team Parallel Pages`} 
+                  alt={contributor?.name || "Team Parallel Pages"} 
                   referrerPolicy="no-referrer"
                 />
               </div>
               <div>
                 <p className="font-bold text-lg">
-                  Written by {contributor?.name || post.authorName}
+                  Written by {contributor?.name || "Team Parallel Pages"}
                 </p>
                 <p className="text-sm text-black/40">
-                  Reviewed & Published by Mokshit | Parallel Pages
+                  Reviewed & Published by Team Parallel Pages
                 </p>
                 <p className="text-xs text-black/30 mt-1">Published on {formatDate(post.publishedAt)}</p>
               </div>
@@ -203,12 +203,12 @@ export default function SinglePost() {
         {!contributor && (
           <div className="mt-20 p-12 bg-gray-50 rounded-3xl flex flex-col md:flex-row gap-8 items-center text-center md:text-left">
             <div className="w-24 h-24 rounded-full bg-gray-200 overflow-hidden shrink-0">
-              <img src={settings?.authorImage || `https://api.dicebear.com/7.x/avataaars/svg?seed=${post.authorName}`} alt={post.authorName} />
+              <img src={settings?.authorImage || `https://api.dicebear.com/7.x/avataaars/svg?seed=Team Parallel Pages`} alt="Team Parallel Pages" />
             </div>
             <div>
-              <h3 className="text-xl font-bold mb-2">Written by {settings?.authorName || post.authorName}</h3>
+              <h3 className="text-xl font-bold mb-2">Written by Team Parallel Pages</h3>
               <p className="text-black/60 leading-relaxed mb-6">
-                {settings?.authorBio || "Mokshit is a builder and storyteller focused on the intersection of technology and creativity. He documents his journey to help other young builders navigate the startup world."}
+                {settings?.authorBio || "Parallel Pages is a curated platform for young builders and thinkers. Our team works to bring you the best insights on technology, creativity, and startups."}
               </p>
               <div className="flex justify-center md:justify-start gap-4">
                 {settings?.socialLinks.twitter && <a href={settings.socialLinks.twitter} className="text-sm font-bold text-blue-600 hover:underline">Follow on Twitter</a>}
@@ -217,6 +217,9 @@ export default function SinglePost() {
             </div>
           </div>
         )}
+
+        {/* Comment Section */}
+        <CommentSection postId={post.id} />
       </article>
 
       {/* Related Posts */}

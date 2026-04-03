@@ -42,7 +42,7 @@ export default function Terms() {
           <section className="mb-12">
             <h2 className="text-2xl font-bold mb-4">4. Intellectual Property</h2>
             <p className="text-black/60 leading-relaxed">
-              The content, design, and logo of Parallel Pages are the intellectual property of Mokshit Jain and are protected by copyright laws. You may not reproduce, distribute, or create derivative works without explicit permission.
+              The content, design, and logo of Parallel Pages are the intellectual property of Team Parallel Pages and are protected by copyright laws. You may not reproduce, distribute, or create derivative works without explicit permission.
             </p>
           </section>
 

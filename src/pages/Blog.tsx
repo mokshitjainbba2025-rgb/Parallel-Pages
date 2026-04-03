@@ -161,18 +161,18 @@ export default function Blog() {
                   <div className="w-8 h-8 rounded-full bg-gray-200 overflow-hidden">
                     {post.contributorId ? (
                       <img 
-                        src={contributors.find(c => c.id === post.contributorId)?.image || `https://api.dicebear.com/7.x/avataaars/svg?seed=${post.authorName}`} 
-                        alt={contributors.find(c => c.id === post.contributorId)?.name || post.authorName} 
+                        src={contributors.find(c => c.id === post.contributorId)?.image || `https://api.dicebear.com/7.x/avataaars/svg?seed=Team Parallel Pages`} 
+                        alt={contributors.find(c => c.id === post.contributorId)?.name || "Team Parallel Pages"} 
                         referrerPolicy="no-referrer"
                       />
                     ) : (
-                      <img src={settings?.authorImage || `https://api.dicebear.com/7.x/avataaars/svg?seed=${post.authorName}`} alt={post.authorName} referrerPolicy="no-referrer" />
+                      <img src={settings?.authorImage || `https://api.dicebear.com/7.x/avataaars/svg?seed=Team Parallel Pages`} alt="Team Parallel Pages" referrerPolicy="no-referrer" />
                     )}
                   </div>
                   <span className="text-xs font-bold">
                     {post.contributorId 
-                      ? contributors.find(c => c.id === post.contributorId)?.name || post.authorName
-                      : settings?.authorName || post.authorName
+                      ? contributors.find(c => c.id === post.contributorId)?.name || "Team Parallel Pages"
+                      : "Team Parallel Pages"
                     }
                   </span>
                 </div>

@@ -51,12 +51,12 @@ export default function About() {
           </div>
           <div className="space-y-12">
             <div>
-              <h3 className="text-xs font-bold uppercase tracking-widest text-black/40 mb-4">Founder</h3>
+              <h3 className="text-xs font-bold uppercase tracking-widest text-black/40 mb-4">The Team</h3>
               <div className="w-20 h-20 rounded-2xl bg-gray-200 overflow-hidden mb-4">
-                <img src={settings?.authorImage || "https://api.dicebear.com/7.x/avataaars/svg?seed=Mokshit"} alt="Founder" />
+                <img src={settings?.authorImage || "https://api.dicebear.com/7.x/avataaars/svg?seed=Team Parallel Pages"} alt="Team" />
               </div>
-              <p className="font-bold">{settings?.authorName || "Mokshit Jain"}</p>
-              <p className="text-sm text-black/40">Entrepreneur & Writer</p>
+              <p className="font-bold">{settings?.authorName || "Team Parallel Pages"}</p>
+              <p className="text-sm text-black/40">Curators & Storytellers</p>
             </div>
             <div>
               <h3 className="text-xs font-bold uppercase tracking-widest text-black/40 mb-4">Values</h3>

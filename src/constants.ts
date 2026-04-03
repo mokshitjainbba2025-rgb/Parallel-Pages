@@ -19,8 +19,8 @@ export const DEFAULT_SETTINGS: SiteSettings = {
     linkedin: 'https://linkedin.com',
     twitter: 'https://twitter.com'
   },
-  authorName: 'Mokshit Jain',
-  authorBio: 'Mokshit is a builder and storyteller focused on the intersection of technology and creativity.',
-  authorImage: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Mokshit',
+  authorName: 'Team Parallel Pages',
+  authorBio: 'Parallel Pages is a curated platform for young builders and thinkers. Our team works to bring you the best insights on technology, creativity, and startups.',
+  authorImage: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Team Parallel Pages',
   themeMode: 'light'
 };

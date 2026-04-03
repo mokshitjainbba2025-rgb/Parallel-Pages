@@ -65,15 +65,20 @@ export interface UserProfile {
   photoURL?: string;
   bio?: string;
   role: 'admin' | 'author';
+  isSubscriber?: boolean;
 }
 
 export interface Comment {
   id: string;
   postId: string;
   authorName: string;
-  authorId?: string;
+  authorId: string;
+  authorAvatar?: string;
   content: string;
   createdAt: any;
+  status: 'pending' | 'approved' | 'rejected';
+  parentCommentId?: string;
+  isTeamReply?: boolean;
 }
 
 export interface NewsletterSubscriber {

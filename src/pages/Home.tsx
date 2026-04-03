@@ -98,10 +98,12 @@ export default function Home() {
               </p>
               <div className="flex items-center gap-4">
                 <div className="w-10 h-10 rounded-full bg-gray-200 overflow-hidden">
-                  <img src={settings?.authorImage || `https://api.dicebear.com/7.x/avataaars/svg?seed=${featuredPost.authorName}`} alt={featuredPost.authorName} />
+                  <img src={settings?.authorImage || `https://api.dicebear.com/7.x/avataaars/svg?seed=Team Parallel Pages`} alt="Team Parallel Pages" referrerPolicy="no-referrer" />
                 </div>
                 <div>
-                  <p className="text-sm font-bold">{settings?.authorName || featuredPost.authorName}</p>
+                  <p className="text-sm font-bold">
+                    {(settings?.authorName && settings.authorName !== 'Mokshit Jain') ? settings.authorName : "Team Parallel Pages"}
+                  </p>
                   <p className="text-xs text-black/40">{featuredPost.readingTime} min read</p>
                 </div>
               </div>
@@ -151,9 +153,11 @@ export default function Home() {
               </p>
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-full bg-gray-200 overflow-hidden">
-                  <img src={settings?.authorImage || `https://api.dicebear.com/7.x/avataaars/svg?seed=${post.authorName}`} alt={post.authorName} />
+                  <img src={settings?.authorImage || `https://api.dicebear.com/7.x/avataaars/svg?seed=Team Parallel Pages`} alt="Team Parallel Pages" referrerPolicy="no-referrer" />
                 </div>
-                <p className="text-xs font-bold">{settings?.authorName || post.authorName}</p>
+                <p className="text-xs font-bold">
+                  {(settings?.authorName && settings.authorName !== 'Mokshit Jain') ? settings.authorName : "Team Parallel Pages"}
+                </p>
               </div>
             </motion.div>
           ))}

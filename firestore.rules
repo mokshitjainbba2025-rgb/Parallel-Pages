@@ -115,9 +115,17 @@ service cloud.firestore {
              data.role in ['admin', 'author'];
     }
 
+    function isSubscriber() {
+      return isAuthenticated() && 
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isSubscriber == true || isAdmin());
+    }
+
     function isValidComment(data) {
-      return data.postId is string && data.content is string && data.content.size() > 0 && data.content.size() < 1000 &&
-             data.authorName is string && data.authorName.size() > 0;
+      return data.postId is string && 
+             data.content is string && data.content.size() > 0 && data.content.size() < 1000 &&
+             data.authorName is string && data.authorName.size() > 0 &&
+             data.authorId == request.auth.uid &&
+             data.status in ['pending', 'approved', 'rejected'];
     }
 
     function isValidSubscriber(data) {
@@ -154,10 +162,10 @@ service cloud.firestore {
     }
 
     match /comments/{commentId} {
-      allow read: if true;
-      allow create: if isValidComment(request.resource.data);
-      allow update: if isAdmin() || (isAuthenticated() && resource.data.authorId == request.auth.uid);
-      allow delete: if isAdmin() || (isAuthenticated() && resource.data.authorId == request.auth.uid);
+      allow read: if resource.data.status == 'approved' || isAdmin();
+      allow create: if isSubscriber() && isValidComment(request.resource.data) && request.resource.data.status == 'approved';
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
     }
 
     match /subscribers/{subscriberId} {

@@ -20,7 +20,7 @@ import {
   User
 } from 'firebase/auth';
 import { db, auth } from '../lib/firebase';
-import { Post, SiteSettings, UserProfile, Contributor } from '../types';
+import { Post, SiteSettings, UserProfile, Contributor, Comment } from '../types';
 import { DEFAULT_SETTINGS } from '../constants';
 
 export enum OperationType {
@@ -118,7 +118,18 @@ export const api = {
     try {
       const userSnap = await getDoc(doc(db, 'users', uid));
       if (!userSnap.exists()) return null;
-      return userSnap.data() as UserProfile;
+      const profile = userSnap.data() as UserProfile;
+      
+      // Check if user is a subscriber if not already marked
+      if (!profile.isSubscriber) {
+        const isSub = await this.isSubscriber(profile.email);
+        if (isSub) {
+          await updateDoc(doc(db, 'users', uid), { isSubscriber: true });
+          profile.isSubscriber = true;
+        }
+      }
+      
+      return profile;
     } catch (error) {
       handleFirestoreError(error, OperationType.GET, path);
       return null;
@@ -299,8 +310,92 @@ export const api = {
         email,
         subscribedAt: serverTimestamp()
       });
+      
+      // If user is logged in, update their profile
+      if (auth.currentUser) {
+        const userRef = doc(db, 'users', auth.currentUser.uid);
+        await updateDoc(userRef, { isSubscriber: true });
+      }
     } catch (error) {
       handleFirestoreError(error, OperationType.CREATE, path);
+    }
+  },
+
+  async isSubscriber(email: string): Promise<boolean> {
+    const path = 'subscribers';
+    try {
+      const q = query(collection(db, 'subscribers'), where('email', '==', email));
+      const snap = await getDocs(q);
+      return !snap.empty;
+    } catch (error) {
+      handleFirestoreError(error, OperationType.LIST, path);
+      return false;
+    }
+  },
+
+  // Comments
+  async getComments(postId: string): Promise<Comment[]> {
+    const path = 'comments';
+    try {
+      const q = query(
+        collection(db, 'comments'),
+        where('postId', '==', postId),
+        orderBy('createdAt', 'asc')
+      );
+      const snap = await getDocs(q);
+      return snap.docs.map(doc => ({ id: doc.id, ...(doc.data() as any) } as Comment));
+    } catch (error) {
+      handleFirestoreError(error, OperationType.LIST, path);
+      return [];
+    }
+  },
+
+  async createComment(comment: Partial<Comment>) {
+    const path = 'comments';
+    try {
+      // Rate limiting check (client-side for now, but rules should handle it too)
+      if (auth.currentUser) {
+        const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+        const q = query(
+          collection(db, 'comments'),
+          where('authorId', '==', auth.currentUser.uid),
+          where('createdAt', '>=', Timestamp.fromDate(oneHourAgo))
+        );
+        const snap = await getDocs(q);
+        if (snap.size >= 5) {
+          throw new Error('Rate limit exceeded. Max 5 comments per hour.');
+        }
+      }
+
+      const newRef = doc(collection(db, 'comments'));
+      const data = {
+        ...comment,
+        id: newRef.id,
+        createdAt: serverTimestamp(),
+        status: 'approved' // Default to approved for now, can change to 'pending' for moderation
+      };
+      await setDoc(newRef, data);
+      return data;
+    } catch (error) {
+      handleFirestoreError(error, OperationType.CREATE, path);
+    }
+  },
+
+  async updateCommentStatus(id: string, status: 'approved' | 'rejected') {
+    const path = `comments/${id}`;
+    try {
+      await updateDoc(doc(db, 'comments', id), { status });
+    } catch (error) {
+      handleFirestoreError(error, OperationType.UPDATE, path);
+    }
+  },
+
+  async deleteComment(id: string) {
+    const path = `comments/${id}`;
+    try {
+      await deleteDoc(doc(db, 'comments', id));
+    } catch (error) {
+      handleFirestoreError(error, OperationType.DELETE, path);
     }
   },
 };

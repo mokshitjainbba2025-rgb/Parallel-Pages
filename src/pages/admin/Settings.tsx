@@ -25,9 +25,9 @@ const DEFAULT_SETTINGS: SiteSettings = {
     instagram: '',
     youtube: ''
   },
-  authorName: 'Mokshit Jain',
-  authorBio: 'Builder and storyteller.',
-  authorImage: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Mokshit',
+  authorName: 'Team Parallel Pages',
+  authorBio: 'Parallel Pages is a curated platform for young builders and thinkers. Our team works to bring you the best insights on technology, creativity, and startups.',
+  authorImage: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Team Parallel Pages',
   themeMode: 'light'
 };
 
