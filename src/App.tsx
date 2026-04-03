@@ -93,6 +93,7 @@ import AdminSettings from './pages/admin/Settings';
 import Login from './pages/Login';
 import Terms from './pages/Terms';
 import Privacy from './pages/Privacy';
+import ScrollToTop from './components/ScrollToTop';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useApp();
@@ -165,6 +166,7 @@ export default function App() {
       <HelmetProvider>
         <AppContext.Provider value={{ settings, user, loading, login, logout, refreshSettings, refreshUser }}>
           <Router>
+            <ScrollToTop />
             <Routes>
               {/* Public Routes */}
               <Route path="/" element={<Home />} />
