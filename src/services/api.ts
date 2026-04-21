@@ -88,12 +88,13 @@ export const api = {
       const userSnap = await getDoc(userRef);
       
       if (!userSnap.exists()) {
+        const adminEmail = 'mokshit.jain.bba2025@atlasskilltech.university';
         const profile: UserProfile = {
           uid: user.uid,
           email: user.email || '',
           displayName: user.displayName || '',
           photoURL: user.photoURL || undefined,
-          role: 'author' // Default role
+          role: user.email === adminEmail ? 'admin' : 'author' // Default role
         };
         await setDoc(userRef, profile);
       }
@@ -339,11 +340,17 @@ export const api = {
     try {
       const q = query(
         collection(db, 'comments'),
-        where('postId', '==', postId),
-        orderBy('createdAt', 'asc')
+        where('postId', '==', postId)
       );
       const snap = await getDocs(q);
-      return snap.docs.map(doc => ({ id: doc.id, ...(doc.data() as any) } as Comment));
+      const comments = snap.docs.map(doc => ({ id: doc.id, ...(doc.data() as any) } as Comment));
+      
+      // Sort client-side: oldest first
+      return comments.sort((a, b) => {
+        const timeA = a.createdAt?.seconds || 0;
+        const timeB = b.createdAt?.seconds || 0;
+        return timeA - timeB;
+      });
     } catch (error) {
       handleFirestoreError(error, OperationType.LIST, path);
       return [];
@@ -356,13 +363,20 @@ export const api = {
       // Rate limiting check (client-side for now, but rules should handle it too)
       if (auth.currentUser) {
         const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+        // Query only by authorId to avoid composite index requirement
         const q = query(
           collection(db, 'comments'),
-          where('authorId', '==', auth.currentUser.uid),
-          where('createdAt', '>=', Timestamp.fromDate(oneHourAgo))
+          where('authorId', '==', auth.currentUser.uid)
         );
         const snap = await getDocs(q);
-        if (snap.size >= 5) {
+        
+        // Filter by date client-side
+        const recentComments = snap.docs.filter(doc => {
+          const createdAt = doc.data().createdAt as Timestamp;
+          return createdAt && createdAt.toDate() >= oneHourAgo;
+        });
+
+        if (recentComments.length >= 5) {
           throw new Error('Rate limit exceeded. Max 5 comments per hour.');
         }
       }

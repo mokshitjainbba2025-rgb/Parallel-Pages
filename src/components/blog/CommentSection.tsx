@@ -50,16 +50,19 @@ export default function CommentSection({ postId }: CommentSectionProps) {
     setError(null);
 
     try {
-      const commentData: Partial<Comment> = {
+      const commentData: any = {
         postId,
         content: content.trim(),
         authorId: user.uid,
         authorName: (user.role === 'admin' && parentId) ? 'Team Parallel Pages' : user.displayName,
         authorAvatar: user.photoURL,
-        parentCommentId: parentId,
         isTeamReply: user.role === 'admin' && !!parentId,
         status: 'approved'
       };
+
+      if (parentId) {
+        commentData.parentCommentId = parentId;
+      }
 
       const created = await api.createComment(commentData);
       if (created) {

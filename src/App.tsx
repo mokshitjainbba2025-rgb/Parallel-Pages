@@ -95,10 +95,11 @@ import Terms from './pages/Terms';
 import Privacy from './pages/Privacy';
 import ScrollToTop from './components/ScrollToTop';
 
-const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+const ProtectedRoute = ({ children, requireAdmin = false }: { children: React.ReactNode, requireAdmin?: boolean }) => {
   const { user, loading } = useApp();
   if (loading) return <div className="flex items-center justify-center h-screen">Loading...</div>;
   if (!user) return <Navigate to="/login" />;
+  if (requireAdmin && user.role !== 'admin') return <Navigate to="/" />;
   return <>{children}</>;
 };
 
@@ -181,10 +182,10 @@ export default function App() {
               <Route path="/privacy" element={<Privacy />} />
 
               {/* Admin Routes */}
-              <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
-              <Route path="/admin/posts" element={<ProtectedRoute><AdminPosts /></ProtectedRoute>} />
-              <Route path="/admin/contributors" element={<ProtectedRoute><AdminContributors /></ProtectedRoute>} />
-              <Route path="/admin/settings" element={<ProtectedRoute><AdminSettings /></ProtectedRoute>} />
+              <Route path="/admin" element={<ProtectedRoute requireAdmin><AdminDashboard /></ProtectedRoute>} />
+              <Route path="/admin/posts" element={<ProtectedRoute requireAdmin><AdminPosts /></ProtectedRoute>} />
+              <Route path="/admin/contributors" element={<ProtectedRoute requireAdmin><AdminContributors /></ProtectedRoute>} />
+              <Route path="/admin/settings" element={<ProtectedRoute requireAdmin><AdminSettings /></ProtectedRoute>} />
             </Routes>
           </Router>
         </AppContext.Provider>
