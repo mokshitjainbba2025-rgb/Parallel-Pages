@@ -176,20 +176,21 @@ export const api = {
   async getPostBySlug(slug: string, includeDrafts = false): Promise<Post | null> {
     const path = 'posts';
     try {
-      let q;
-      if (includeDrafts) {
-        q = query(collection(db, 'posts'), where('slug', '==', slug));
-      } else {
-        q = query(
-          collection(db, 'posts'), 
-          where('slug', '==', slug),
-          where('status', '==', 'published')
-        );
-      }
+      // Query only by slug to avoid composite index requirement with status
+      const q = query(collection(db, 'posts'), where('slug', '==', slug));
       const querySnapshot = await getDocs(q);
+      
       if (querySnapshot.empty) return null;
-      const postDoc = querySnapshot.docs[0];
-      return { id: postDoc.id, ...(postDoc.data() as any) } as Post;
+      
+      const posts = querySnapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() as any) } as Post));
+      
+      // Filter by status client-side if drafts shouldn't be included
+      if (!includeDrafts) {
+        const publishedPost = posts.find(p => p.status === 'published');
+        return publishedPost || null;
+      }
+      
+      return posts[0];
     } catch (error) {
       handleFirestoreError(error, OperationType.GET, path);
       return null;

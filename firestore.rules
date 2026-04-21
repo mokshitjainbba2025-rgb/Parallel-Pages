@@ -143,7 +143,8 @@ service cloud.firestore {
     // ===============================================================
 
     match /posts/{postId} {
-      allow read: if resource.data.status == 'published' || isAdmin() || (isAuthenticated() && resource.data.authorId == request.auth.uid);
+      allow read: if resource.data.status == 'published';
+      allow read: if isAdmin() || (isAuthenticated() && resource.data.authorId == request.auth.uid);
       allow create: if (isAdmin() || isAuthor()) && isValidPost(request.resource.data) && request.resource.data.authorId == request.auth.uid;
       allow update: if (isAdmin() || (isAuthor() && resource.data.authorId == request.auth.uid)) && isValidPost(request.resource.data) && request.resource.data.authorId == resource.data.authorId;
       allow delete: if isAdmin() || (isAuthor() && resource.data.authorId == request.auth.uid);
@@ -162,7 +163,8 @@ service cloud.firestore {
     }
 
     match /comments/{commentId} {
-      allow read: if resource.data.status == 'approved' || isAdmin();
+      allow read: if resource.data.status == 'approved';
+      allow read: if isAdmin();
       allow create: if isSubscriber() && isValidComment(request.resource.data) && request.resource.data.status == 'approved';
       allow update: if isAdmin();
       allow delete: if isAdmin();
