@@ -55,8 +55,20 @@ interface FirestoreErrorInfo {
 }
 
 function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
+  const rawMessage = error instanceof Error ? error.message : String(error);
+  
+  // Provide human-friendly guidance for configuration errors
+  let displayMessage = rawMessage;
+  if (rawMessage.includes('auth/operation-not-allowed')) {
+    displayMessage = 'Configuration Error: Email/Password login is not enabled in your Firebase Console. Please enable it under Authentication > Sign-in method.';
+  } else if (rawMessage.includes('auth/popup-blocked')) {
+    displayMessage = 'Browser Error: Sign-in popup was blocked. Please allow popups for this site and try again.';
+  } else if (rawMessage.includes('auth/email-already-in-use')) {
+    displayMessage = 'This email is already in use. If you already have an account, please try logging in instead.';
+  }
+
   const errInfo: FirestoreErrorInfo = {
-    error: error instanceof Error ? error.message : String(error),
+    error: displayMessage,
     authInfo: {
       userId: auth.currentUser?.uid,
       email: auth.currentUser?.email,
@@ -110,18 +122,64 @@ export const api = {
           createdAt: serverTimestamp()
         };
         await setDoc(userRef, profile);
+        return { user, profile };
       }
       
-      return user;
+      return { user, profile: userSnap.data() as UserProfile };
     } catch (error: any) {
       if (error.code === 'auth/cancelled-popup-request' || error.code === 'auth/popup-closed-by-user') {
-        console.warn('Login popup was closed or cancelled');
         return;
       }
-      console.error('Login error:', error);
       throw error;
     } finally {
       isLoggingIn = false;
+    }
+  },
+
+  async signupWithEmail(data: { email: string; password: string; name: string; role: 'reader' | 'writer'; bio?: string }) {
+    const { createUserWithEmailAndPassword, updateProfile } = await import('firebase/auth');
+    try {
+      const result = await createUserWithEmailAndPassword(auth, data.email, data.password);
+      await updateProfile(result.user, { displayName: data.name });
+      
+      const profile: UserProfile = {
+        uid: result.user.uid,
+        email: data.email,
+        displayName: data.name,
+        role: data.role,
+        bio: data.bio,
+        createdAt: serverTimestamp()
+      };
+      
+      await setDoc(doc(db, 'users', result.user.uid), profile);
+      return { user: result.user, profile };
+    } catch (error) {
+      handleFirestoreError(error, OperationType.CREATE, 'users');
+      throw error;
+    }
+  },
+
+  async loginWithEmail(email: string, password: string) {
+    const { signInWithEmailAndPassword } = await import('firebase/auth');
+    try {
+      const result = await signInWithEmailAndPassword(auth, email, password);
+      const profile = await this.getUserProfile(result.user.uid);
+      return { user: result.user, profile };
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  async upgradeToWriter(uid: string, bio: string) {
+    try {
+      await updateDoc(doc(db, 'users', uid), { 
+        role: 'writer',
+        bio,
+        upgradedAt: serverTimestamp() 
+      });
+    } catch (error) {
+      handleFirestoreError(error, OperationType.UPDATE, `users/${uid}`);
+      throw error;
     }
   },
 

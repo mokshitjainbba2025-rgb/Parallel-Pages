@@ -1,17 +1,29 @@
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useApp } from '../App';
-import { Menu, X, Instagram, Linkedin, Twitter, Youtube, Moon, Sun } from 'lucide-react';
+import { Menu, X, Instagram, Linkedin, Twitter, Youtube, UserCircle, LogOut } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
+import AuthModal from './auth/AuthModal';
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const { settings, user, logout } = useApp();
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = React.useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+
+  const handleDashboardClick = () => {
+    if (user?.role === 'admin') navigate('/admin');
+    else if (user?.role === 'writer') navigate('/writer');
+    else navigate('/');
+    setIsMenuOpen(false);
+  };
 
   return (
     <div className="min-h-screen bg-white text-black font-sans selection:bg-blue-100 selection:text-blue-900">
+      <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
+      
       {/* Navigation */}
       <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-bottom border-black/5">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -36,13 +48,36 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                   {item.label}
                 </Link>
               ))}
-              {user && (user.role === 'admin' || user.role === 'writer') && (
-                <Link 
-                  to={user.role === 'admin' ? "/admin" : "/writer"} 
-                  className="text-sm font-medium text-blue-600 border border-blue-600 px-4 py-2 rounded-full hover:bg-blue-600 hover:text-white transition-all"
+              
+              {user ? (
+                <div className="flex items-center gap-4">
+                  {(user.role === 'admin' || user.role === 'writer') && (
+                    <button 
+                      onClick={handleDashboardClick}
+                      className="text-sm font-bold text-blue-600 border-2 border-blue-600 px-6 py-2 rounded-full hover:bg-blue-600 hover:text-white transition-all shadow-lg shadow-blue-100"
+                    >
+                      Dashboard
+                    </button>
+                  )}
+                  {user.role === 'reader' && (
+                    <button 
+                      onClick={() => setIsAuthModalOpen(true)}
+                      className="text-sm font-bold border-2 border-black px-6 py-2 rounded-full hover:bg-black hover:text-white transition-all"
+                    >
+                      Write
+                    </button>
+                  )}
+                  <button onClick={() => logout()} className="text-black/40 hover:text-red-500 transition-colors" title="Logout">
+                    <LogOut size={20} />
+                  </button>
+                </div>
+              ) : (
+                <button 
+                  onClick={() => setIsAuthModalOpen(true)}
+                  className="text-sm font-bold bg-black text-white px-8 py-2.5 rounded-full hover:bg-blue-600 hover:shadow-xl hover:shadow-blue-100 transition-all"
                 >
-                  Dashboard
-                </Link>
+                  Login / Join
+                </button>
               )}
             </div>
 
@@ -74,14 +109,47 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                   {item.label}
                 </Link>
               ))}
-              {user && (user.role === 'admin' || user.role === 'writer') && (
-                <Link 
-                  to={user.role === 'admin' ? "/admin" : "/writer"} 
-                  onClick={() => setIsMenuOpen(false)} 
-                  className="block text-lg font-medium text-blue-600"
+              {user ? (
+                <div className="space-y-4 pt-4 border-t border-black/5">
+                  {(user.role === 'admin' || user.role === 'writer') && (
+                    <button 
+                      onClick={handleDashboardClick}
+                      className="block w-full text-left text-lg font-bold text-blue-600"
+                    >
+                      Dashboard
+                    </button>
+                  )}
+                  {user.role === 'reader' && (
+                    <button 
+                      onClick={() => {
+                        setIsMenuOpen(false);
+                        setIsAuthModalOpen(true);
+                      }}
+                      className="block w-full text-left text-lg font-bold text-black"
+                    >
+                      Become a Writer
+                    </button>
+                  )}
+                  <button 
+                    onClick={() => {
+                      logout();
+                      setIsMenuOpen(false);
+                    }} 
+                    className="block w-full text-left text-lg font-medium text-red-500 pt-2"
+                  >
+                    Logout
+                  </button>
+                </div>
+              ) : (
+                <button 
+                  onClick={() => {
+                    setIsMenuOpen(false);
+                    setIsAuthModalOpen(true);
+                  }}
+                  className="block w-full text-left text-lg font-bold text-blue-600"
                 >
-                  Dashboard
-                </Link>
+                  Login / Join
+                </button>
               )}
             </motion.div>
           )}

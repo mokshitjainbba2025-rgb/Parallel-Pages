@@ -170,7 +170,10 @@ export default function App() {
   }, []);
 
   const login = async () => {
-    await api.loginWithGoogle();
+    const result = await api.loginWithGoogle();
+    if (result) {
+      setUser(result.profile);
+    }
   };
 
   const logout = async () => {
