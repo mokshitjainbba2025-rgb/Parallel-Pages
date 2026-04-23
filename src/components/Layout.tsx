@@ -36,8 +36,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                   {item.label}
                 </Link>
               ))}
-              {user && (
-                <Link to="/admin" className="text-sm font-medium text-blue-600 border border-blue-600 px-4 py-2 rounded-full hover:bg-blue-600 hover:text-white transition-all">
+              {user && (user.role === 'admin' || user.role === 'writer') && (
+                <Link 
+                  to={user.role === 'admin' ? "/admin" : "/writer"} 
+                  className="text-sm font-medium text-blue-600 border border-blue-600 px-4 py-2 rounded-full hover:bg-blue-600 hover:text-white transition-all"
+                >
                   Dashboard
                 </Link>
               )}
@@ -71,8 +74,12 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                   {item.label}
                 </Link>
               ))}
-              {user && (
-                <Link to="/admin" onClick={() => setIsMenuOpen(false)} className="block text-lg font-medium text-blue-600">
+              {user && (user.role === 'admin' || user.role === 'writer') && (
+                <Link 
+                  to={user.role === 'admin' ? "/admin" : "/writer"} 
+                  onClick={() => setIsMenuOpen(false)} 
+                  className="block text-lg font-medium text-blue-600"
+                >
                   Dashboard
                 </Link>
               )}

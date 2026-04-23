@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useApp } from '../App';
+import { api } from '../services/api';
 import { motion } from 'motion/react';
 import { ArrowLeft, AlertCircle } from 'lucide-react';
 
@@ -14,8 +15,17 @@ export default function Login() {
     setError('');
     setLoading(true);
     try {
-      await login();
-      navigate('/admin');
+      const firebaseUser = await api.loginWithGoogle();
+      if (firebaseUser) {
+        const profile = await api.getUserProfile(firebaseUser.uid);
+        if (profile?.role === 'admin') {
+          navigate('/admin');
+        } else if (profile?.role === 'writer') {
+          navigate('/writer');
+        } else {
+          navigate('/');
+        }
+      }
     } catch (err) {
       setError('Google login failed. Please try again.');
     } finally {
@@ -30,7 +40,7 @@ export default function Login() {
           <ArrowLeft size={16} /> Back to website
         </Link>
         <h2 className="text-center text-4xl font-serif font-bold text-gray-900">
-          Admin Login
+          Dashboard Login
         </h2>
         <p className="mt-2 text-center text-sm text-gray-600">
           Manage your Parallel Pages content
