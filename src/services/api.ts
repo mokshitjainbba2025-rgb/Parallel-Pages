@@ -10,7 +10,10 @@ import {
   where, 
   orderBy, 
   serverTimestamp,
-  Timestamp
+  Timestamp,
+  getCountFromServer,
+  increment,
+  limit
 } from 'firebase/firestore';
 import { 
   signInWithPopup, 
@@ -20,7 +23,7 @@ import {
   User
 } from 'firebase/auth';
 import { db, auth } from '../lib/firebase';
-import { Post, SiteSettings, UserProfile, Contributor, Comment } from '../types';
+import { Post, SiteSettings, UserProfile, Contributor, Comment, NewsletterSubscriber, Like } from '../types';
 import { DEFAULT_SETTINGS } from '../constants';
 
 export enum OperationType {
@@ -71,19 +74,28 @@ function handleFirestoreError(error: unknown, operationType: OperationType, path
     path
   }
   console.error('Firestore Error: ', JSON.stringify(errInfo));
+  
+  // DON'T throw for GET or LIST operations to prevent app crashes for guests
+  if (operationType === OperationType.GET || operationType === OperationType.LIST) {
+    return;
+  }
+  
   throw new Error(JSON.stringify(errInfo));
 }
 
 const googleProvider = new GoogleAuthProvider();
 
+let isLoggingIn = false;
+
 export const api = {
   // Auth
   async loginWithGoogle() {
+    if (isLoggingIn) return;
+    isLoggingIn = true;
     try {
       const result = await signInWithPopup(auth, googleProvider);
       const user = result.user;
       
-      // Check if user profile exists, if not create one
       const userRef = doc(db, 'users', user.uid);
       const userSnap = await getDoc(userRef);
       
@@ -94,15 +106,22 @@ export const api = {
           email: user.email || '',
           displayName: user.displayName || '',
           photoURL: user.photoURL || undefined,
-          role: user.email === adminEmail ? 'admin' : 'author' // Default role
+          role: user.email === adminEmail ? 'admin' : 'reader',
+          createdAt: serverTimestamp()
         };
         await setDoc(userRef, profile);
       }
       
       return user;
-    } catch (error) {
+    } catch (error: any) {
+      if (error.code === 'auth/cancelled-popup-request' || error.code === 'auth/popup-closed-by-user') {
+        console.warn('Login popup was closed or cancelled');
+        return;
+      }
       console.error('Login error:', error);
       throw error;
+    } finally {
+      isLoggingIn = false;
     }
   },
 
@@ -119,49 +138,74 @@ export const api = {
     try {
       const userSnap = await getDoc(doc(db, 'users', uid));
       if (!userSnap.exists()) return null;
-      const profile = userSnap.data() as UserProfile;
-      
-      // Check if user is a subscriber if not already marked
-      if (!profile.isSubscriber) {
-        const isSub = await this.isSubscriber(profile.email);
-        if (isSub) {
-          await updateDoc(doc(db, 'users', uid), { isSubscriber: true });
-          profile.isSubscriber = true;
-        }
-      }
-      
-      return profile;
+      return userSnap.data() as UserProfile;
     } catch (error) {
       handleFirestoreError(error, OperationType.GET, path);
       return null;
     }
   },
 
-  // Posts
-  async getPosts(): Promise<Post[]> {
-    const path = 'posts';
+  async updateUserRole(uid: string, role: 'admin' | 'writer' | 'reader') {
+    const path = `users/${uid}`;
     try {
-      const q = query(collection(db, 'posts'), orderBy('createdAt', 'desc'));
-      const querySnapshot = await getDocs(q);
-      return querySnapshot.docs.map(postDoc => ({ id: postDoc.id, ...(postDoc.data() as any) } as Post));
+      await updateDoc(doc(db, 'users', uid), { role });
+    } catch (error) {
+      handleFirestoreError(error, OperationType.UPDATE, path);
+    }
+  },
+
+  async getUsers(): Promise<UserProfile[]> {
+    const path = 'users';
+    try {
+      const q = query(collection(db, 'users'), orderBy('createdAt', 'desc'));
+      const snap = await getDocs(q);
+      return snap.docs.map(doc => doc.data() as UserProfile);
     } catch (error) {
       handleFirestoreError(error, OperationType.LIST, path);
       return [];
     }
   },
 
-  async getPublishedPosts(): Promise<Post[]> {
+  // Posts
+  async getPosts(status?: Post['status']): Promise<Post[]> {
     const path = 'posts';
     try {
-      // Remove orderBy to avoid composite index requirement for now
-      const q = query(
-        collection(db, 'posts'), 
-        where('status', '==', 'published')
-      );
-      const querySnapshot = await getDocs(q);
-      const posts = querySnapshot.docs.map(postDoc => ({ id: postDoc.id, ...(postDoc.data() as any) } as Post));
+      let q;
+      if (status) {
+        q = query(collection(db, 'posts'), where('status', '==', status));
+      } else {
+        q = query(collection(db, 'posts'), orderBy('createdAt', 'desc'));
+      }
       
-      // Sort client-side: newest first
+      const snap = await getDocs(q);
+      const posts = snap.docs.map(doc => ({ id: doc.id, ...(doc.data() as any) } as Post));
+      
+      // Sort client-side if we applied a status filter (to avoid index requirement)
+      if (status) {
+        return posts.sort((a, b) => {
+          const timeA = a.createdAt?.seconds || 0;
+          const timeB = b.createdAt?.seconds || 0;
+          return timeB - timeA;
+        });
+      }
+      
+      return posts;
+    } catch (error) {
+      handleFirestoreError(error, OperationType.LIST, path);
+      return [];
+    }
+  },
+
+  async getPostsByAuthor(authorId: string): Promise<Post[]> {
+    const path = 'posts';
+    try {
+      const q = query(
+        collection(db, 'posts'),
+        where('authorId', '==', authorId)
+      );
+      const snap = await getDocs(q);
+      const posts = snap.docs.map(doc => ({ id: doc.id, ...(doc.data() as any) } as Post));
+      // Sort client-side
       return posts.sort((a, b) => {
         const timeA = a.createdAt?.seconds || 0;
         const timeB = b.createdAt?.seconds || 0;
@@ -173,24 +217,13 @@ export const api = {
     }
   },
 
-  async getPostBySlug(slug: string, includeDrafts = false): Promise<Post | null> {
+  async getPostBySlug(slug: string): Promise<Post | null> {
     const path = 'posts';
     try {
-      // Query only by slug to avoid composite index requirement with status
-      const q = query(collection(db, 'posts'), where('slug', '==', slug));
-      const querySnapshot = await getDocs(q);
-      
-      if (querySnapshot.empty) return null;
-      
-      const posts = querySnapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() as any) } as Post));
-      
-      // Filter by status client-side if drafts shouldn't be included
-      if (!includeDrafts) {
-        const publishedPost = posts.find(p => p.status === 'published');
-        return publishedPost || null;
-      }
-      
-      return posts[0];
+      const q = query(collection(db, 'posts'), where('slug', '==', slug), limit(1));
+      const snap = await getDocs(q);
+      if (snap.empty) return null;
+      return { id: snap.docs[0].id, ...(snap.docs[0].data() as any) } as Post;
     } catch (error) {
       handleFirestoreError(error, OperationType.GET, path);
       return null;
@@ -200,16 +233,20 @@ export const api = {
   async createPost(post: Partial<Post>) {
     const path = 'posts';
     try {
-      const newPostRef = doc(collection(db, 'posts'));
-      const postData = {
+      const newRef = doc(collection(db, 'posts'));
+      const data = {
         ...post,
-        id: newPostRef.id,
+        id: newRef.id,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
+        likesCount: 0,
+        viewsCount: 0,
+        commentsCount: 0,
+        status: post.status || 'draft',
         publishedAt: post.status === 'published' ? serverTimestamp() : null
       };
-      await setDoc(newPostRef, postData);
-      return postData;
+      await setDoc(newRef, data);
+      return data;
     } catch (error) {
       handleFirestoreError(error, OperationType.CREATE, path);
     }
@@ -218,13 +255,28 @@ export const api = {
   async updatePost(id: string, post: Partial<Post>) {
     const path = `posts/${id}`;
     try {
-      const postRef = doc(db, 'posts', id);
       const updateData = {
         ...post,
-        updatedAt: serverTimestamp(),
-        publishedAt: post.status === 'published' ? serverTimestamp() : null
+        updatedAt: serverTimestamp()
       };
-      await updateDoc(postRef, updateData);
+      // Automatic publishedAt management
+      if (post.status === 'published') {
+        (updateData as any).publishedAt = serverTimestamp();
+      }
+      await updateDoc(doc(db, 'posts', id), updateData);
+    } catch (error) {
+      handleFirestoreError(error, OperationType.UPDATE, path);
+    }
+  },
+
+  async updatePostStatus(id: string, status: Post['status']) {
+    const path = `posts/${id}`;
+    try {
+      const updateData: any = { status, updatedAt: serverTimestamp() };
+      if (status === 'published') {
+        updateData.publishedAt = serverTimestamp();
+      }
+      await updateDoc(doc(db, 'posts', id), updateData);
     } catch (error) {
       handleFirestoreError(error, OperationType.UPDATE, path);
     }
@@ -243,8 +295,8 @@ export const api = {
   async getContributors(): Promise<Contributor[]> {
     const path = 'contributors';
     try {
-      const querySnapshot = await getDocs(collection(db, 'contributors'));
-      return querySnapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() as any) } as Contributor));
+      const snap = await getDocs(collection(db, 'contributors'));
+      return snap.docs.map(doc => ({ id: doc.id, ...(doc.data() as any) } as Contributor));
     } catch (error) {
       handleFirestoreError(error, OperationType.LIST, path);
       return [];
@@ -287,7 +339,7 @@ export const api = {
     try {
       const settingsSnap = await getDoc(doc(db, 'settings', 'site'));
       if (!settingsSnap.exists()) return DEFAULT_SETTINGS;
-      return { ...DEFAULT_SETTINGS, ...settingsSnap.data() } as SiteSettings;
+      return { ...DEFAULT_SETTINGS, ...(settingsSnap.data() as any) } as SiteSettings;
     } catch (error) {
       handleFirestoreError(error, OperationType.GET, path);
       return DEFAULT_SETTINGS;
@@ -303,7 +355,7 @@ export const api = {
     }
   },
 
-  // Newsletter
+  // Newsletter & Subscribers
   async subscribe(email: string) {
     const path = 'subscribers';
     try {
@@ -312,40 +364,82 @@ export const api = {
         email,
         subscribedAt: serverTimestamp()
       });
-      
-      // If user is logged in, update their profile
       if (auth.currentUser) {
-        const userRef = doc(db, 'users', auth.currentUser.uid);
-        await updateDoc(userRef, { isSubscriber: true });
+        await updateDoc(doc(db, 'users', auth.currentUser.uid), { isSubscriber: true });
       }
     } catch (error) {
       handleFirestoreError(error, OperationType.CREATE, path);
     }
   },
 
-  async isSubscriber(email: string): Promise<boolean> {
+  async getSubscribersCount(): Promise<number> {
     const path = 'subscribers';
     try {
-      const q = query(collection(db, 'subscribers'), where('email', '==', email));
-      const snap = await getDocs(q);
-      return !snap.empty;
+      const snap = await getCountFromServer(collection(db, 'subscribers'));
+      return snap.data().count;
     } catch (error) {
       handleFirestoreError(error, OperationType.LIST, path);
+      return 0;
+    }
+  },
+
+  async getSubscribers(): Promise<NewsletterSubscriber[]> {
+    const path = 'subscribers';
+    try {
+      const q = query(collection(db, 'subscribers'), orderBy('subscribedAt', 'desc'));
+      const snap = await getDocs(q);
+      return snap.docs.map(doc => doc.data() as NewsletterSubscriber);
+    } catch (error) {
+      handleFirestoreError(error, OperationType.LIST, path);
+      return [];
+    }
+  },
+
+  // Engagement
+  async likePost(postId: string, userId: string) {
+    const path = `likes/${postId}_${userId}`;
+    try {
+      await setDoc(doc(db, 'likes', `${postId}_${userId}`), {
+        postId, userId, createdAt: serverTimestamp()
+      });
+      await updateDoc(doc(db, 'posts', postId), { likesCount: increment(1) });
+    } catch (error) {
+      handleFirestoreError(error, OperationType.CREATE, path);
+    }
+  },
+
+  async unlikePost(postId: string, userId: string) {
+    const path = `likes/${postId}_${userId}`;
+    try {
+      await deleteDoc(doc(db, 'likes', `${postId}_${userId}`));
+      await updateDoc(doc(db, 'posts', postId), { likesCount: increment(-1) });
+    } catch (error) {
+      handleFirestoreError(error, OperationType.DELETE, path);
+    }
+  },
+
+  async hasLiked(postId: string, userId: string): Promise<boolean> {
+    try {
+      const snap = await getDoc(doc(db, 'likes', `${postId}_${userId}`));
+      return snap.exists();
+    } catch (error) {
       return false;
     }
+  },
+
+  async incrementViews(postId: string) {
+    try {
+      await updateDoc(doc(db, 'posts', postId), { viewsCount: increment(1) });
+    } catch (error) {}
   },
 
   // Comments
   async getComments(postId: string): Promise<Comment[]> {
     const path = 'comments';
     try {
-      const q = query(
-        collection(db, 'comments'),
-        where('postId', '==', postId)
-      );
+      const q = query(collection(db, 'comments'), where('postId', '==', postId));
       const snap = await getDocs(q);
       const comments = snap.docs.map(doc => ({ id: doc.id, ...(doc.data() as any) } as Comment));
-      
       // Sort client-side: oldest first
       return comments.sort((a, b) => {
         const timeA = a.createdAt?.seconds || 0;
@@ -358,38 +452,32 @@ export const api = {
     }
   },
 
+  async getAllComments(): Promise<Comment[]> {
+    const path = 'comments';
+    try {
+      const q = query(collection(db, 'comments'), orderBy('createdAt', 'desc'));
+      const snap = await getDocs(q);
+      return snap.docs.map(doc => ({ id: doc.id, ...(doc.data() as any) } as Comment));
+    } catch (error) {
+      handleFirestoreError(error, OperationType.LIST, path);
+      return [];
+    }
+  },
+
   async createComment(comment: Partial<Comment>) {
     const path = 'comments';
     try {
-      // Rate limiting check (client-side for now, but rules should handle it too)
-      if (auth.currentUser) {
-        const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
-        // Query only by authorId to avoid composite index requirement
-        const q = query(
-          collection(db, 'comments'),
-          where('authorId', '==', auth.currentUser.uid)
-        );
-        const snap = await getDocs(q);
-        
-        // Filter by date client-side
-        const recentComments = snap.docs.filter(doc => {
-          const createdAt = doc.data().createdAt as Timestamp;
-          return createdAt && createdAt.toDate() >= oneHourAgo;
-        });
-
-        if (recentComments.length >= 5) {
-          throw new Error('Rate limit exceeded. Max 5 comments per hour.');
-        }
-      }
-
       const newRef = doc(collection(db, 'comments'));
       const data = {
         ...comment,
         id: newRef.id,
         createdAt: serverTimestamp(),
-        status: 'approved' // Default to approved for now, can change to 'pending' for moderation
+        status: 'approved'
       };
       await setDoc(newRef, data);
+      if (comment.postId) {
+        await updateDoc(doc(db, 'posts', comment.postId), { commentsCount: increment(1) });
+      }
       return data;
     } catch (error) {
       handleFirestoreError(error, OperationType.CREATE, path);
@@ -399,7 +487,7 @@ export const api = {
   async updateCommentStatus(id: string, status: 'approved' | 'rejected') {
     const path = `comments/${id}`;
     try {
-      await updateDoc(doc(db, 'comments', id), { status });
+       await updateDoc(doc(db, 'comments', id), { status });
     } catch (error) {
       handleFirestoreError(error, OperationType.UPDATE, path);
     }
@@ -408,6 +496,13 @@ export const api = {
   async deleteComment(id: string) {
     const path = `comments/${id}`;
     try {
+      const snap = await getDoc(doc(db, 'comments', id));
+      if (snap.exists()) {
+        const data = snap.data();
+        if (data.postId) {
+          await updateDoc(doc(db, 'posts', data.postId), { commentsCount: increment(-1) });
+        }
+      }
       await deleteDoc(doc(db, 'comments', id));
     } catch (error) {
       handleFirestoreError(error, OperationType.DELETE, path);

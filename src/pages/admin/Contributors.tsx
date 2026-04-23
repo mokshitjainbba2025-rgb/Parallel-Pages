@@ -85,7 +85,7 @@ export default function AdminContributors() {
             <div className="flex items-start justify-between mb-4">
               <div className="flex items-center gap-4">
                 <img 
-                  src={contributor.image} 
+                  src={contributor.image || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(contributor.name)}`} 
                   alt={contributor.name} 
                   className="w-16 h-16 rounded-2xl object-cover"
                   referrerPolicy="no-referrer"

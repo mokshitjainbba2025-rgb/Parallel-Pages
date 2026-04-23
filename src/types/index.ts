@@ -21,14 +21,19 @@ export interface Post {
   authorId: string;
   authorName: string;
   authorAvatar?: string;
-  contributorId?: string; // New field
-  status: 'draft' | 'review' | 'published'; // Updated status
-  publishedAt: any; // Firebase Timestamp or ISO string
+  contributorId?: string;
+  status: 'draft' | 'submitted' | 'approved' | 'rejected' | 'published';
+  publishedAt: any;
   createdAt: any;
   updatedAt: any;
   tags: string[];
   category: string;
   readingTime: number;
+  likesCount: number;
+  viewsCount: number;
+  commentsCount: number;
+  featured?: boolean;
+  rejectionReason?: string;
   seo: {
     title: string;
     description: string;
@@ -64,8 +69,16 @@ export interface UserProfile {
   displayName: string;
   photoURL?: string;
   bio?: string;
-  role: 'admin' | 'author';
+  role: 'admin' | 'writer' | 'reader';
   isSubscriber?: boolean;
+  createdAt: any;
+}
+
+export interface Like {
+  id: string;
+  postId: string;
+  userId: string;
+  createdAt: any;
 }
 
 export interface Comment {
@@ -74,6 +87,7 @@ export interface Comment {
   authorName: string;
   authorId: string;
   authorAvatar?: string;
+  authorRole?: 'admin' | 'writer' | 'reader';
   content: string;
   createdAt: any;
   status: 'pending' | 'approved' | 'rejected';
@@ -84,4 +98,25 @@ export interface Comment {
 export interface NewsletterSubscriber {
   email: string;
   subscribedAt: any;
+}
+
+export interface AnalyticsEvent {
+  id?: string;
+  type: 'page_view' | 'session_ping';
+  path: string;
+  slug?: string;
+  referrer: string;
+  visitorId: string;
+  sessionId: string;
+  timestamp: any;
+  userAgent: string;
+}
+
+export interface AnalyticsMetrics {
+  totalPageViews: number;
+  uniqueVisitors: number;
+  avgSessionDuration: number;
+  bounceRate: number;
+  topPosts: { slug: string; title: string; views: number }[];
+  trafficSources: { source: string; count: number }[];
 }

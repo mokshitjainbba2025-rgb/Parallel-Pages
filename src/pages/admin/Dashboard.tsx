@@ -1,35 +1,44 @@
 import React, { useEffect, useState } from 'react';
 import AdminLayout from '../../components/AdminLayout';
 import { api } from '../../services/api';
-import { Post } from '../../types';
-import { FileText, Users, Eye, TrendingUp, Plus, ArrowUpRight } from 'lucide-react';
+import { analytics } from '../../services/analytics';
+import { Post, AnalyticsMetrics } from '../../types';
+import { FileText, Users, Eye, TrendingUp, Plus, ArrowUpRight, Clock } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { formatDate } from '../../lib/utils';
 
 export default function AdminDashboard() {
   const [posts, setPosts] = useState<Post[]>([]);
+  const [metrics, setMetrics] = useState<AnalyticsMetrics | null>(null);
+  const [subscribersCount, setSubscribersCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchPosts = async () => {
+    const fetchData = async () => {
       try {
-        const data = await api.getPosts();
-        setPosts(data);
+        const [postsData, metricsData, subCount] = await Promise.all([
+          api.getPosts(),
+          analytics.getMetrics(7), // Last 7 days for the overview
+          api.getSubscribersCount()
+        ]);
+        setPosts(postsData);
+        setMetrics(metricsData);
+        setSubscribersCount(subCount);
       } catch (err) {
         console.error(err);
       } finally {
         setLoading(false);
       }
     };
-    fetchPosts();
+    fetchData();
   }, []);
 
   const stats = [
     { label: 'Total Posts', value: posts.length, icon: FileText, color: 'bg-blue-500' },
-    { label: 'Published', value: posts.filter(p => p.status === 'published').length, icon: Eye, color: 'bg-green-500' },
-    { label: 'Drafts', value: posts.filter(p => p.status === 'draft').length, icon: TrendingUp, color: 'bg-orange-500' },
-    { label: 'Subscribers', value: '124', icon: Users, color: 'bg-purple-500' },
+    { label: 'Page Views (7d)', value: metrics?.totalPageViews || 0, icon: Eye, color: 'bg-green-500' },
+    { label: 'Avg. Duration (7d)', value: `${Math.floor((metrics?.avgSessionDuration || 0) / 60)}m`, icon: Clock, color: 'bg-purple-500' },
+    { label: 'Subscribers', value: subscribersCount, icon: Users, color: 'bg-orange-500' },
   ];
 
   return (
@@ -69,7 +78,11 @@ export default function AdminDashboard() {
               <div key={post.id} className="p-6 flex items-center justify-between hover:bg-gray-50 transition-colors">
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 rounded-xl bg-gray-100 overflow-hidden shrink-0">
-                    <img src={post.coverImage} alt={post.title} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                    {post.coverImage ? (
+                      <img src={post.coverImage} alt={post.title} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                    ) : (
+                      <div className="w-full h-full bg-gray-200 flex items-center justify-center text-[10px] text-black/20 font-bold uppercase">No image</div>
+                    )}
                   </div>
                   <div>
                     <h4 className="font-bold text-sm line-clamp-1">{post.title}</h4>

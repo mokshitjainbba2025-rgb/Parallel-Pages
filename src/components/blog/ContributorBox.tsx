@@ -8,7 +8,7 @@ interface ContributorBoxProps {
 export const ContributorBox: React.FC<ContributorBoxProps> = ({ contributor }) => {
   return (
     <div className="my-12 p-6 md:p-8 rounded-2xl bg-gray-50 border border-gray-100 flex flex-col md:flex-row gap-6 items-center md:items-start text-center md:text-left">
-      {contributor.image && (
+      {!!contributor.image && (
         <img 
           src={contributor.image} 
           alt={contributor.name} 

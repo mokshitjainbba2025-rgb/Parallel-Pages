@@ -1,25 +1,28 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import Layout from '../components/Layout';
 import { Post, Contributor } from '../types';
 import { api } from '../services/api';
 import { useApp } from '../App';
-import { motion, useScroll, useSpring } from 'motion/react';
+import { motion, useScroll, useSpring, AnimatePresence } from 'motion/react';
 import { formatDate } from '../lib/utils';
 import ReactMarkdown from 'react-markdown';
-import { Share2, Bookmark, Clock, ChevronLeft, Twitter, Linkedin } from 'lucide-react';
+import { Share2, Bookmark, Clock, ChevronLeft, Twitter, Linkedin, Heart, MessageCircle, Sparkles, ArrowRight } from 'lucide-react';
 import { VerifiedBadge } from '../components/blog/VerifiedBadge';
 import { ContributorBox } from '../components/blog/ContributorBox';
 import CommentSection from '../components/blog/CommentSection';
 
 export default function SinglePost() {
   const { slug } = useParams<{ slug: string }>();
-  const { settings, user } = useApp();
+  const { settings, user, login } = useApp();
+  const navigate = useNavigate();
   const [post, setPost] = useState<Post | null>(null);
   const [contributor, setContributor] = useState<Contributor | null>(null);
   const [relatedPosts, setRelatedPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
+  const [hasLiked, setHasLiked] = useState(false);
+  const [localLikes, setLocalLikes] = useState(0);
 
   const { scrollYProgress } = useScroll();
   const scaleX = useSpring(scrollYProgress, {
@@ -33,17 +36,26 @@ export default function SinglePost() {
       if (!slug) return;
       setLoading(true);
       try {
-        const isAdmin = user?.role === 'admin';
-        const data = await api.getPostBySlug(slug, isAdmin);
-        setPost(data);
-
+        const data = await api.getPostBySlug(slug);
         if (data) {
+          setPost(data);
+          setLocalLikes(data.likesCount || 0);
+          
+          // Increment views
+          await api.incrementViews(data.id);
+
+          // Check if user liked
+          if (user) {
+            const liked = await api.hasLiked(data.id, user.uid);
+            setHasLiked(liked);
+          }
+
           if (data.contributorId) {
             const contributors = await api.getContributors();
             const found = contributors.find(c => c.id === data.contributorId);
             setContributor(found || null);
           }
-          const allPosts = await api.getPublishedPosts();
+          const allPosts = await api.getPosts('published');
           setRelatedPosts(allPosts.filter(p => p.id !== data.id).slice(0, 3));
         }
       } catch (err) {
@@ -55,6 +67,28 @@ export default function SinglePost() {
     fetchPost();
     window.scrollTo(0, 0);
   }, [slug, user]);
+
+  const handleLike = async () => {
+    if (!user) {
+      login();
+      return;
+    }
+    if (!post) return;
+
+    try {
+      if (hasLiked) {
+        setLocalLikes(prev => prev - 1);
+        setHasLiked(false);
+        await api.unlikePost(post.id, user.uid);
+      } else {
+        setLocalLikes(prev => prev + 1);
+        setHasLiked(true);
+        await api.likePost(post.id, user.uid);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   if (loading) return <Layout><div className="py-40 text-center">Loading article...</div></Layout>;
   if (!post) return <Layout><div className="py-40 text-center">Article not found.</div></Layout>;
@@ -170,14 +204,19 @@ export default function SinglePost() {
           </div>
         </header>
 
-        {/* Cover Image */}
         <div className="aspect-[21/9] overflow-hidden rounded-3xl mb-20 bg-gray-100">
-          <img
-            src={post.coverImage}
-            alt={post.title}
-            className="w-full h-full object-cover"
-            referrerPolicy="no-referrer"
-          />
+          {post.coverImage ? (
+            <img
+              src={post.coverImage}
+              alt={post.title}
+              className="w-full h-full object-cover"
+              referrerPolicy="no-referrer"
+            />
+          ) : (
+            <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+              <span className="text-black/20 font-serif italic">No cover image</span>
+            </div>
+          )}
         </div>
 
         {/* Content */}
@@ -199,23 +238,91 @@ export default function SinglePost() {
         {/* Contributor Box */}
         {contributor && <ContributorBox contributor={contributor} />}
 
+        {/* Engagement Bar */}
+        <div className="mt-12 py-8 border-y border-gray-100 flex items-center justify-between">
+          <div className="flex items-center gap-6">
+            <button
+              onClick={handleLike}
+              className={`flex items-center gap-2 font-bold transition-all ${hasLiked ? 'text-pink-600' : 'text-gray-400 hover:text-gray-600'}`}
+            >
+              <div className="relative">
+                <Heart size={24} fill={hasLiked ? "currentColor" : "none"} className={hasLiked ? "animate-bounce" : ""} />
+                <AnimatePresence>
+                  {hasLiked && (
+                    <motion.div
+                      initial={{ scale: 0, opacity: 1 }}
+                      animate={{ scale: 2, opacity: 0 }}
+                      className="absolute inset-0 text-pink-400 pointer-events-none"
+                    >
+                      <Heart size={24} fill="currentColor" />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+              <span>{localLikes}</span>
+            </button>
+            <button className="flex items-center gap-2 text-gray-400 hover:text-gray-600 font-bold">
+              <MessageCircle size={24} />
+              <span>{post.commentsCount || 0}</span>
+            </button>
+          </div>
+          <div className="flex items-center gap-4">
+            <span className="text-xs font-bold text-gray-300 uppercase tracking-widest hidden sm:block">Share this story</span>
+            <button className="p-2 text-gray-400 hover:text-blue-400 transition-colors"><Twitter size={18}/></button>
+            <button className="p-2 text-gray-400 hover:text-blue-700 transition-colors"><Linkedin size={18}/></button>
+          </div>
+        </div>
+
         {/* Author Bio (Fallback if no contributor) */}
         {!contributor && (
-          <div className="mt-20 p-12 bg-gray-50 rounded-3xl flex flex-col md:flex-row gap-8 items-center text-center md:text-left">
-            <div className="w-24 h-24 rounded-full bg-gray-200 overflow-hidden shrink-0">
-              <img src={settings?.authorImage || `https://api.dicebear.com/7.x/avataaars/svg?seed=Team Parallel Pages`} alt="Team Parallel Pages" />
+          <div className="mt-12 p-8 bg-gray-50 rounded-3xl flex flex-col md:flex-row gap-6 items-center text-center md:text-left">
+            <div className="w-20 h-20 rounded-full bg-gray-200 overflow-hidden shrink-0">
+              <img 
+                src={settings?.authorImage || `https://api.dicebear.com/7.x/avataaars/svg?seed=Team Parallel Pages`} 
+                alt="Team Parallel Pages" 
+                referrerPolicy="no-referrer"
+              />
             </div>
             <div>
-              <h3 className="text-xl font-bold mb-2">Written by Team Parallel Pages</h3>
-              <p className="text-black/60 leading-relaxed mb-6">
+              <h3 className="text-lg font-bold mb-1">Written by Team Parallel Pages</h3>
+              <p className="text-sm text-black/60 leading-relaxed mb-4">
                 {settings?.authorBio || "Parallel Pages is a curated platform for young builders and thinkers. Our team works to bring you the best insights on technology, creativity, and startups."}
               </p>
               <div className="flex justify-center md:justify-start gap-4">
-                {settings?.socialLinks.twitter && <a href={settings.socialLinks.twitter} className="text-sm font-bold text-blue-600 hover:underline">Follow on Twitter</a>}
-                <Link to="/about" className="text-sm font-bold text-blue-600 hover:underline">View Profile</Link>
+                <Link to="/about" className="text-xs font-bold text-blue-600 hover:underline">View Profile</Link>
               </div>
             </div>
           </div>
+        )}
+
+        {/* Writer CTA */}
+        {user?.role === 'reader' && (
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="mt-16 bg-black text-white p-12 rounded-[2.5rem] relative overflow-hidden group"
+          >
+            <div className="absolute -top-20 -right-20 w-64 h-64 bg-blue-600/20 blur-3xl group-hover:bg-blue-600/30 transition-colors"></div>
+            <div className="relative z-10">
+              <div className="flex items-center gap-2 mb-6">
+                <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center text-black">
+                  <Sparkles size={16} />
+                </div>
+                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-blue-400">Contributor Network</p>
+              </div>
+              <h3 className="text-3xl font-serif font-bold mb-4">Have a story worth telling?</h3>
+              <p className="text-gray-400 max-w-lg mb-8 leading-relaxed">
+                Join our collective of meaningful writers. Publish your thoughts, reach your audience, and build your digital legacy on Parallel Pages.
+              </p>
+              <Link 
+                to="/contact" 
+                className="inline-flex items-center gap-2 bg-white text-black px-8 py-4 rounded-2xl font-bold hover:bg-blue-500 hover:text-white transition-all group/btn"
+              >
+                Apply to be a Writer <ArrowRight size={18} className="transition-transform group-hover/btn:translate-x-1" />
+              </Link>
+            </div>
+          </motion.div>
         )}
 
         {/* Comment Section */}
@@ -231,7 +338,11 @@ export default function SinglePost() {
               <div key={p.id}>
                 <Link to={`/blog/${p.slug}`}>
                   <div className="aspect-[4/3] overflow-hidden rounded-xl bg-gray-100 mb-6">
-                    <img src={p.coverImage} alt={p.title} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                    {p.coverImage ? (
+                      <img src={p.coverImage} alt={p.title} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                    ) : (
+                      <div className="w-full h-full bg-gray-200 flex items-center justify-center text-black/20 text-xs">No image</div>
+                    )}
                   </div>
                   <h3 className="text-xl font-serif font-bold mb-2 hover:text-blue-600 transition-colors leading-tight">{p.title}</h3>
                 </Link>

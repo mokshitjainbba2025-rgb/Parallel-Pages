@@ -14,13 +14,17 @@
         "authorId": { "type": "string" },
         "authorName": { "type": "string" },
         "authorAvatar": { "type": "string" },
-        "status": { "type": "string", "enum": ["draft", "published"] },
+        "status": { "type": "string", "enum": ["draft", "submitted", "approved", "rejected", "published"] },
         "publishedAt": { "type": "object", "description": "Firebase Timestamp" },
         "createdAt": { "type": "object", "description": "Firebase Timestamp" },
         "updatedAt": { "type": "object", "description": "Firebase Timestamp" },
         "tags": { "type": "array", "items": { "type": "string" } },
         "category": { "type": "string" },
         "readingTime": { "type": "number" },
+        "likesCount": { "type": "number" },
+        "viewsCount": { "type": "number" },
+        "commentsCount": { "type": "number" },
+        "featured": { "type": "boolean" },
         "seo": {
           "type": "object",
           "properties": {
@@ -80,7 +84,8 @@
         "displayName": { "type": "string" },
         "photoURL": { "type": "string" },
         "bio": { "type": "string" },
-        "role": { "type": "string", "enum": ["admin", "author"] }
+        "role": { "type": "string", "enum": ["admin", "writer", "reader"] },
+        "createdAt": { "type": "object", "description": "Firebase Timestamp" }
       },
       "required": ["uid", "email", "role"]
     },
@@ -132,6 +137,35 @@
         }
       },
       "required": ["name", "bio", "image"]
+    },
+    "AnalyticsEvent": {
+      "title": "AnalyticsEvent",
+      "description": "An individual analytics event (page view, session start, etc.)",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "type": { "type": "string", "enum": ["page_view", "session_ping"] },
+        "path": { "type": "string" },
+        "slug": { "type": "string" },
+        "referrer": { "type": "string" },
+        "visitorId": { "type": "string" },
+        "sessionId": { "type": "string" },
+        "timestamp": { "type": "object", "description": "Firebase Timestamp" },
+        "userAgent": { "type": "string" }
+      },
+      "required": ["type", "path", "visitorId", "sessionId", "timestamp"]
+    },
+    "Like": {
+      "title": "Like",
+      "description": "A like record for a post",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "postId": { "type": "string" },
+        "userId": { "type": "string" },
+        "createdAt": { "type": "object", "description": "Firebase Timestamp" }
+      },
+      "required": ["postId", "userId", "createdAt"]
     }
   },
   "firestore": {
@@ -158,6 +192,14 @@
     "/contributors/{contributorId}": {
       "schema": "Contributor",
       "description": "Collection of guest contributors"
+    },
+    "/analytics/{eventId}": {
+      "schema": "AnalyticsEvent",
+      "description": "Collection of raw analytics events"
+    },
+    "/likes/{likeId}": {
+      "schema": "Like",
+      "description": "Collection of post likes"
     }
   }
 }

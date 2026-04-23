@@ -1,184 +1,98 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // ===============================================================
-    // Assumed Data Model
-    // ===============================================================
-    //
-    // Collection: posts
-    // Document ID: postId
-    // Fields:
-    //   - id: string
-    //   - title: string
-    //   - slug: string
-    //   - content: string
-    //   - excerpt: string
-    //   - coverImage: string
-    //   - authorId: string
-    //   - authorName: string
-    //   - authorAvatar: string (optional)
-    //   - status: string (draft/published)
-    //   - publishedAt: timestamp
-    //   - createdAt: timestamp
-    //   - updatedAt: timestamp
-    //   - tags: list
-    //   - category: string
-    //   - readingTime: number
-    //   - seo: map
-    //
-    // Collection: settings
-    // Document ID: site
-    // Fields:
-    //   - siteName: string
-    //   - siteDescription: string
-    //   - primaryColor: string
-    //   - secondaryColor: string
-    //   - accentColor: string
-    //   - fontSans: string
-    //   - fontSerif: string
-    //   - logoUrl: string (optional)
-    //   - navigation: list
-    //   - socialLinks: map
-    //   - authorName: string
-    //   - authorBio: string
-    //   - authorImage: string
-    //   - themeMode: string
-    //
-    // Collection: users
-    // Document ID: userId
-    // Fields:
-    //   - uid: string
-    //   - email: string
-    //   - displayName: string
-    //   - photoURL: string (optional)
-    //   - bio: string (optional)
-    //   - role: string (admin/author)
-    //
-    // Collection: comments
-    // Document ID: commentId
-    // Fields:
-    //   - id: string
-    //   - postId: string
-    //   - authorName: string
-    //   - authorId: string (optional)
-    //   - content: string
-    //   - createdAt: timestamp
-    //
-    // Collection: subscribers
-    // Document ID: subscriberId
-    // Fields:
-    //   - email: string
-    //   - subscribedAt: timestamp
-    //
-    // Collection: contributors
-    // Document ID: contributorId
-    // Fields:
-    //   - id: string
-    //   - name: string
-    //   - bio: string
-    //   - image: string
-    //   - social: map
-    //
-    // ===============================================================
+    // --- Helpers ---
+    function isSignedIn() { return request.auth != null; }
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+    
+    function isAdmin() { 
+      return isSignedIn() && (
+        request.auth.token.email == "mokshit.jain.bba2025@atlasskilltech.university" ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "admin")
+      ); 
+    }
+    
+    function isWriter() { 
+      return isSignedIn() && (
+        isAdmin() || 
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "writer")
+      );
+    }
+    
+    function isOwner(userId) { return isSignedIn() && request.auth.uid == userId; }
 
-    // ===============================================================
-    // Helper Functions
-    // ===============================================================
-    function isAuthenticated() {
-      return request.auth != null;
+    function isValidAnalyticsEvent(data) {
+      return data.type in ['page_view', 'session_ping'] &&
+             data.path is string && data.path.size() < 1024 &&
+             data.visitorId is string && data.visitorId.size() < 128 &&
+             data.sessionId is string && data.sessionId.size() < 128 &&
+             data.timestamp == request.time;
     }
 
-    function isOwner(userId) {
-      return isAuthenticated() && request.auth.uid == userId;
+    // --- 1. Analytics & Tracking ---
+    match /analytics/{eventId} {
+      allow create: if isValidAnalyticsEvent(incoming());
+      allow read, update, delete: if isAdmin();
     }
 
-    function isAdmin() {
-      return isAuthenticated() &&
-        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
-          (request.auth.token.email == "mokshit.jain.bba2025@atlasskilltech.university" && request.auth.token.email_verified == true));
+    // --- 2. Subscribers ---
+    match /subscribers/{subscriberId} {
+      allow create: if true;
+      allow read, write: if isAdmin();
     }
 
-    function isAuthor() {
-      return isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'author';
-    }
-
-    function isValidPost(data) {
-      return data.title is string && data.title.size() > 0 && data.title.size() < 200 &&
-             data.slug is string && data.slug.size() > 0 && data.slug.size() < 200 &&
-             data.content is string && data.content.size() > 0 &&
-             data.status in ['draft', 'published'];
-    }
-
-    function isValidUser(data) {
-      return data.uid is string && data.uid == request.auth.uid &&
-             data.email is string && data.email.size() > 0 &&
-             data.role in ['admin', 'author'];
-    }
-
-    function isSubscriber() {
-      return isAuthenticated() && 
-        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isSubscriber == true || isAdmin());
-    }
-
-    function isValidComment(data) {
-      return data.postId is string && 
-             data.content is string && data.content.size() > 0 && data.content.size() < 1000 &&
-             data.authorName is string && data.authorName.size() > 0 &&
-             data.authorId == request.auth.uid &&
-             data.status in ['pending', 'approved', 'rejected'];
-    }
-
-    function isValidSubscriber(data) {
-      return data.email is string && data.email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
-    }
-
-    function isValidContributor(data) {
-      return data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
-             data.bio is string && data.bio.size() > 0 && data.bio.size() < 1000 &&
-             data.image is string && data.image.size() > 0;
-    }
-
-    // ===============================================================
-    // Rules
-    // ===============================================================
-
+    // --- 3. Posts & Content ---
     match /posts/{postId} {
-      allow read: if resource.data.status == 'published';
-      allow read: if isAdmin() || (isAuthenticated() && resource.data.authorId == request.auth.uid);
-      allow create: if (isAdmin() || isAuthor()) && isValidPost(request.resource.data) && request.resource.data.authorId == request.auth.uid;
-      allow update: if (isAdmin() || (isAuthor() && resource.data.authorId == request.auth.uid)) && isValidPost(request.resource.data) && request.resource.data.authorId == resource.data.authorId;
-      allow delete: if isAdmin() || (isAuthor() && resource.data.authorId == request.auth.uid);
+      function isPublished() { return resource.data.status == 'published'; }
+      function isAuthor() { return isSignedIn() && resource.data.authorId == request.auth.uid; }
+      
+      allow read: if isPublished() || isAdmin() || isAuthor();
+      allow create: if isWriter();
+      allow update: if isAdmin() || (isAuthor() && incoming().status != 'published');
+      allow delete: if isAdmin();
     }
 
-    match /settings/site {
+    // --- 4. User Profiles ---
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isSignedIn();
+      allow update: if (isOwner(userId) && incoming().role == existing().role) || isAdmin();
+    }
+
+    // --- 5. Engagement (Comments, Likes) ---
+    match /comments/{commentId} {
+      allow read: if true;
+      allow create: if isSignedIn();
+      allow update, delete: if isAdmin() || (isSignedIn() && resource.data.authorId == request.auth.uid);
+    }
+
+    match /likes/{likeId} {
+      allow read: if true;
+      allow create: if isSignedIn();
+      allow delete: if isOwner(resource.data.userId) || isAdmin();
+    }
+
+    // --- 6. Utilities & Assets ---
+    match /settings/{docId} {
       allow read: if true;
       allow write: if isAdmin();
     }
 
-    match /users/{userId} {
-      allow read: if isOwner(userId) || isAdmin();
-      allow create: if isAuthenticated() && isValidUser(request.resource.data) && (request.resource.data.role == 'author' || isAdmin());
-      allow update: if isOwner(userId) && isValidUser(request.resource.data) && request.resource.data.role == resource.data.role;
-      allow delete: if isAdmin();
-    }
-
-    match /comments/{commentId} {
-      allow read: if resource.data.status == 'approved';
-      allow read: if isAdmin();
-      allow create: if isSubscriber() && isValidComment(request.resource.data) && request.resource.data.status == 'approved';
-      allow update: if isAdmin();
-      allow delete: if isAdmin();
-    }
-
-    match /subscribers/{subscriberId} {
-      allow read: if isAdmin();
-      allow create: if isValidSubscriber(request.resource.data);
-      allow update, delete: if isAdmin();
-    }
-
     match /contributors/{contributorId} {
       allow read: if true;
-      allow create, update, delete: if isAdmin();
+      allow write: if isAdmin();
+    }
+
+    match /test/connection {
+      allow read: if true;
+    }
+
+    // --- 0. Global Safety Net (Terminal) ---
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }

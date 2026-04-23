@@ -7,7 +7,7 @@ import { useApp } from '../App';
 import { Link } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { formatDate } from '../lib/utils';
-import { Search, Filter, ChevronRight } from 'lucide-react';
+import { Search, Filter, ChevronRight, Heart, MessageCircle } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 export default function Blog() {
@@ -22,15 +22,22 @@ export default function Blog() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [postsData, contributorsData] = await Promise.all([
-          api.getPublishedPosts(),
-          api.getContributors()
-        ]);
-        setPosts(postsData);
-        setFilteredPosts(postsData);
-        setContributors(contributorsData);
+        setLoading(true);
+        const postsData = await api.getPosts('published').catch(err => {
+          console.error('Error fetching published posts:', err);
+          return [];
+        });
+        
+        const contributorsData = await api.getContributors().catch(err => {
+          console.error('Error fetching contributors:', err);
+          return [];
+        });
+
+        setPosts(postsData || []);
+        setFilteredPosts(postsData || []);
+        setContributors(contributorsData || []);
       } catch (err) {
-        console.error(err);
+        console.error('Unexpected error in Blog fetchData:', err);
       } finally {
         setLoading(false);
       }
@@ -136,12 +143,16 @@ export default function Blog() {
             >
               <Link to={`/blog/${post.slug}`}>
                 <div className="aspect-[4/3] overflow-hidden rounded-2xl bg-gray-100 mb-8">
-                  <img
-                    src={post.coverImage}
-                    alt={post.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                    referrerPolicy="no-referrer"
-                  />
+                  {post.coverImage ? (
+                    <img
+                      src={post.coverImage}
+                      alt={post.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                      referrerPolicy="no-referrer"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-gray-200 flex items-center justify-center text-black/20 font-serif italic text-xs">No image</div>
+                  )}
                 </div>
               </Link>
               <div className="flex items-center gap-4 mb-4">
@@ -166,17 +177,27 @@ export default function Blog() {
                         referrerPolicy="no-referrer"
                       />
                     ) : (
-                      <img src={settings?.authorImage || `https://api.dicebear.com/7.x/avataaars/svg?seed=Team Parallel Pages`} alt="Team Parallel Pages" referrerPolicy="no-referrer" />
+                      <img src={post.authorAvatar || settings?.authorImage || `https://api.dicebear.com/7.x/avataaars/svg?seed=Team Parallel Pages`} alt="Team Parallel Pages" referrerPolicy="no-referrer" />
                     )}
                   </div>
-                  <span className="text-xs font-bold">
+                  <span className="text-xs font-bold whitespace-nowrap overflow-hidden text-ellipsis max-w-[100px]">
                     {post.contributorId 
                       ? contributors.find(c => c.id === post.contributorId)?.name || "Team Parallel Pages"
-                      : "Team Parallel Pages"
+                      : post.authorName || "Team Parallel Pages"
                     }
                   </span>
                 </div>
-                <span className="text-[10px] font-bold text-black/40 uppercase tracking-widest">{post.readingTime} min read</span>
+                <div className="flex items-center gap-4 text-black/40">
+                  <div className="flex items-center gap-1">
+                    <Heart size={14} />
+                    <span className="text-[10px] font-bold">{post.likesCount || 0}</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <MessageCircle size={14} />
+                    <span className="text-[10px] font-bold">{post.commentsCount || 0}</span>
+                  </div>
+                  <span className="text-[10px] font-bold uppercase tracking-widest hidden sm:block">{post.readingTime}m</span>
+                </div>
               </div>
             </motion.div>
           ))}

@@ -3,7 +3,7 @@ import AdminLayout from '../../components/AdminLayout';
 import { api } from '../../services/api';
 import { Post, Contributor } from '../../types';
 import { useApp } from '../../App';
-import { Plus, Search, MoreVertical, Edit2, Trash2, ExternalLink, X, Save, Image as ImageIcon, Tag, Layout as LayoutIcon, User as UserIcon } from 'lucide-react';
+import { Plus, Search, MoreVertical, Edit2, Trash2, ExternalLink, X, Save, Image as ImageIcon, Tag, Layout as LayoutIcon, User as UserIcon, Check, Star } from 'lucide-react';
 import { formatDate } from '../../lib/utils';
 import { useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
@@ -75,8 +75,10 @@ export default function AdminPosts() {
   const handleSave = async () => {
     if (!editingPost || !user) return;
     try {
+      setLoading(true);
       if (editingPost.id) {
         await api.updatePost(editingPost.id, editingPost);
+        alert('Post updated successfully!');
       } else {
         await api.createPost({
           ...editingPost,
@@ -85,20 +87,46 @@ export default function AdminPosts() {
           authorAvatar: user.photoURL || undefined,
           readingTime: Math.ceil((editingPost.content?.split(' ').length || 0) / 200)
         });
+        alert('Post created successfully!');
       }
       await fetchPosts();
       setSearchParams({});
     } catch (err) {
       console.error('Failed to save post', err);
+      alert('Failed to save post. Please check your credentials or network.');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleDelete = async (id: string) => {
+  const handleUpdateStatus = async (id: string, status: Post['status']) => {
     try {
-      await api.deletePost(id);
+      let reason = '';
+      if (status === 'rejected') {
+        reason = prompt('Reason for rejection:') || '';
+        if (!reason) return;
+      }
+      
+      setLoading(true);
+      if (status === 'rejected') {
+        await api.updatePost(id, { status, rejectionReason: reason });
+      } else {
+        await api.updatePostStatus(id, status);
+      }
+      await fetchPosts();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleToggleFeatured = async (post: Post) => {
+    try {
+      await api.updatePost(post.id, { featured: !post.featured });
       fetchPosts();
     } catch (err) {
-      console.error('Failed to delete post', err);
+      console.error(err);
     }
   };
 
@@ -111,6 +139,18 @@ export default function AdminPosts() {
             type="text"
             placeholder="Search posts..."
             className="w-full pl-12 pr-4 py-3 bg-white border border-gray-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
+            onChange={(e) => {
+              const term = e.target.value.toLowerCase();
+              if (!term) {
+                fetchPosts();
+                return;
+              }
+              const filtered = posts.filter(p => 
+                p.title.toLowerCase().includes(term) || 
+                p.slug.toLowerCase().includes(term)
+              );
+              setPosts(filtered);
+            }}
           />
         </div>
         <button
@@ -138,7 +178,11 @@ export default function AdminPosts() {
                 <td className="px-6 py-4">
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 rounded-xl bg-gray-100 overflow-hidden shrink-0">
-                      <img src={post.coverImage} alt={post.title} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                      {post.coverImage ? (
+                        <img src={post.coverImage} alt={post.title} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                      ) : (
+                        <div className="w-full h-full bg-gray-200 flex items-center justify-center text-[10px] text-black/20 font-bold uppercase">No image</div>
+                      )}
                     </div>
                     <div>
                       <p className="font-bold text-sm line-clamp-1">{post.title}</p>
@@ -149,38 +193,53 @@ export default function AdminPosts() {
                 <td className="px-6 py-4">
                   <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest ${
                     post.status === 'published' ? 'bg-green-50 text-green-600' : 
-                    post.status === 'review' ? 'bg-blue-50 text-blue-600' :
+                    post.status === 'submitted' ? 'bg-blue-50 text-blue-600' :
+                    post.status === 'rejected' ? 'bg-red-50 text-red-600' :
                     'bg-orange-50 text-orange-600'
                   }`}>
                     {post.status}
                   </span>
                 </td>
-                <td className="px-6 py-4 text-sm text-gray-500">
-                  {contributors.find(c => c.id === post.contributorId)?.name || 'None'}
+                <td className="px-6 py-4">
+                  <div className="flex flex-col">
+                    <span className="text-sm font-medium">{post.authorName || 'Anonymous'}</span>
+                    <span className="text-[10px] text-gray-400">Writer ID: {post.authorId?.slice(0, 8)}...</span>
+                  </div>
                 </td>
-                <td className="px-6 py-4 text-sm text-gray-500">{formatDate(post.publishedAt)}</td>
+                <td className="px-6 py-4 text-sm text-gray-500">{formatDate(post.createdAt)}</td>
                 <td className="px-6 py-4 text-right">
-                  <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="flex justify-end gap-2">
+                    {post.status === 'submitted' && (
+                      <>
+                        <button
+                          onClick={() => handleUpdateStatus(post.id, 'published')}
+                          className="p-2 text-green-600 hover:bg-green-50 rounded-lg"
+                          title="Approve & Publish"
+                        >
+                          <Check className="w-5 h-5" />
+                        </button>
+                        <button
+                          onClick={() => handleUpdateStatus(post.id, 'rejected')}
+                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
+                          title="Reject"
+                        >
+                          <X className="w-5 h-5" />
+                        </button>
+                      </>
+                    )}
+                    <button
+                      onClick={() => handleToggleFeatured(post)}
+                      className={`p-2 rounded-lg transition-colors ${post.featured ? 'text-amber-500 bg-amber-50' : 'text-gray-400 hover:text-amber-500 hover:bg-amber-50'}`}
+                      title={post.featured ? "Unfeature" : "Feature"}
+                    >
+                      <Star className="w-5 h-5" fill={post.featured ? "currentColor" : "none"} />
+                    </button>
                     <button
                       onClick={() => setSearchParams({ edit: post.id })}
                       className="p-2 text-gray-400 hover:text-blue-600 transition-colors"
                     >
                       <Edit2 size={18} />
                     </button>
-                    <button
-                      onClick={() => handleDelete(post.id)}
-                      className="p-2 text-gray-400 hover:text-red-600 transition-colors"
-                    >
-                      <Trash2 size={18} />
-                    </button>
-                    <a
-                      href={`/blog/${post.slug}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="p-2 text-gray-400 hover:text-black transition-colors"
-                    >
-                      <ExternalLink size={18} />
-                    </a>
                   </div>
                 </td>
               </tr>
@@ -240,7 +299,15 @@ export default function AdminPosts() {
                       type="text"
                       placeholder="Post Title"
                       value={editingPost.title}
-                      onChange={(e) => setEditingPost({ ...editingPost, title: e.target.value, slug: e.target.value.toLowerCase().replace(/ /g, '-') })}
+                      onChange={(e) => {
+                        const newTitle = e.target.value;
+                        const updates: any = { title: newTitle };
+                        // Only auto-generate slug for new posts if it wasn't manually edited
+                        if (isNew) {
+                          updates.slug = newTitle.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+                        }
+                        setEditingPost({ ...editingPost, ...updates });
+                      }}
                       className="w-full text-4xl font-serif font-bold border-none focus:ring-0 placeholder:text-gray-200"
                     />
                     <textarea
@@ -314,9 +381,9 @@ export default function AdminPosts() {
                             className="w-full bg-white border border-gray-200 rounded-xl pl-10 pr-4 py-2 text-sm focus:outline-none focus:border-blue-500"
                           />
                         </div>
-                        {editingPost.coverImage && (
+                        {editingPost.coverImage ? (
                           <img src={editingPost.coverImage} className="mt-4 rounded-xl aspect-video object-cover" referrerPolicy="no-referrer" />
-                        )}
+                        ) : null}
                       </div>
 
                       <div>

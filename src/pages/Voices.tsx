@@ -17,14 +17,22 @@ export default function Voices() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [contributorsData, postsData] = await Promise.all([
-          api.getContributors(),
-          api.getPublishedPosts()
-        ]);
-        setContributors(contributorsData);
-        setPosts(postsData);
+        setLoading(true);
+        // Fetch independently to prevent one failure from blocking everything
+        const contributorsData = await api.getContributors().catch(err => {
+          console.error('Error fetching contributors:', err);
+          return [];
+        });
+        
+        const postsData = await api.getPosts('published').catch(err => {
+          console.error('Error fetching published posts:', err);
+          return [];
+        });
+
+        setContributors(contributorsData || []);
+        setPosts(postsData || []);
       } catch (err) {
-        console.error(err);
+        console.error('Unexpected error in Voices fetchData:', err);
       } finally {
         setLoading(false);
       }

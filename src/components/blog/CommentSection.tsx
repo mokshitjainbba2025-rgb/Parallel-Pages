@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { MessageSquare, Send, Trash2, Reply, Shield, AlertCircle } from 'lucide-react';
+import { MessageSquare, Send, Trash2, Reply, Shield, AlertCircle, ArrowRight } from 'lucide-react';
 import { useApp } from '../../App';
 import { api } from '../../services/api';
 import { Comment } from '../../types';
@@ -37,9 +37,8 @@ export default function CommentSection({ postId }: CommentSectionProps) {
 
   const handleSubmit = async (e: React.FormEvent, parentId?: string) => {
     e.preventDefault();
-    if (!user) return;
-    if (!user.isSubscriber && user.role !== 'admin') {
-      setError('Only subscribers can join the conversation.');
+    if (!user) {
+      login();
       return;
     }
 
@@ -54,9 +53,10 @@ export default function CommentSection({ postId }: CommentSectionProps) {
         postId,
         content: content.trim(),
         authorId: user.uid,
-        authorName: (user.role === 'admin' && parentId) ? 'Team Parallel Pages' : user.displayName,
+        authorName: user.displayName || 'Anonymous',
         authorAvatar: user.photoURL,
-        isTeamReply: user.role === 'admin' && !!parentId,
+        isTeamReply: user.role === 'admin',
+        authorRole: user.role,
         status: 'approved'
       };
 
@@ -66,7 +66,10 @@ export default function CommentSection({ postId }: CommentSectionProps) {
 
       const created = await api.createComment(commentData);
       if (created) {
-        setComments(prev => [...prev, created as Comment]);
+        // Optimistic update or just fetch again for accuracy
+        const updatedComments = await api.getComments(postId);
+        setComments(updatedComments);
+        
         if (parentId) {
           setReplyContent('');
           setReplyingTo(null);
@@ -105,73 +108,52 @@ export default function CommentSection({ postId }: CommentSectionProps) {
         </h2>
       </div>
 
-      {/* Comment Input / Subscriber Prompt */}
+      {/* Comment Input / Registration Prompt */}
       <div className="mb-16">
         {user ? (
-          user.isSubscriber || user.role === 'admin' ? (
-            <form onSubmit={(e) => handleSubmit(e)} className="space-y-4">
-              <div className="relative group">
-                <textarea
-                  value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
-                  placeholder="Share your thoughts..."
-                  className="w-full p-6 bg-gray-50 rounded-3xl border border-transparent focus:border-blue-600 focus:bg-white transition-all outline-none min-h-[120px] resize-none text-lg"
-                  maxLength={1000}
-                />
-                <div className="absolute bottom-4 right-4 text-xs text-black/20">
-                  {newComment.length}/1000
-                </div>
+          <form onSubmit={(e) => handleSubmit(e)} className="space-y-4">
+            <div className="relative group">
+              <textarea
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value)}
+                placeholder="Share your thoughts..."
+                className="w-full p-6 bg-gray-50 rounded-3xl border border-transparent focus:border-blue-600 focus:bg-white transition-all outline-none min-h-[120px] resize-none text-lg"
+                maxLength={1000}
+              />
+              <div className="absolute bottom-4 right-4 text-xs text-black/20">
+                {newComment.length}/1000
               </div>
-              {error && (
-                <div className="flex items-center gap-2 text-red-600 text-sm bg-red-50 p-4 rounded-2xl">
-                  <AlertCircle size={16} />
-                  {error}
-                </div>
-              )}
-              <div className="flex justify-end">
-                <button
-                  type="submit"
-                  disabled={submitting || !newComment.trim()}
-                  className="bg-blue-600 text-white px-8 py-3 rounded-full font-bold hover:bg-blue-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                >
-                  {submitting ? 'Posting...' : 'Post Comment'}
-                  <Send size={18} />
-                </button>
-              </div>
-            </form>
-          ) : (
-            <div className="p-12 bg-blue-50 rounded-3xl text-center">
-              <h3 className="text-xl font-bold mb-4">Join the Conversation</h3>
-              <p className="text-black/60 mb-8 max-w-md mx-auto">
-                Only subscribers of Parallel Pages can join the conversation. Subscribe to share your thoughts.
-              </p>
-              <Link
-                to="/newsletter"
-                className="inline-block bg-blue-600 text-white px-8 py-3 rounded-full font-bold hover:bg-blue-700 transition-all"
-              >
-                Subscribe Now
-              </Link>
             </div>
-          )
+            {error && (
+              <div className="flex items-center gap-2 text-red-600 text-sm bg-red-50 p-4 rounded-2xl">
+                <AlertCircle size={16} />
+                {error}
+              </div>
+            )}
+            <div className="flex justify-end">
+              <button
+                type="submit"
+                disabled={submitting || !newComment.trim()}
+                className="bg-blue-600 text-white px-8 py-3 rounded-full font-bold hover:bg-blue-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                {submitting ? 'Posting...' : 'Post Comment'}
+                <Send size={18} />
+              </button>
+            </div>
+          </form>
         ) : (
           <div className="p-12 bg-gray-50 rounded-3xl text-center border border-dashed border-black/10">
-            <h3 className="text-xl font-bold mb-4">Subscribe to Parallel Pages</h3>
+            <h3 className="text-xl font-bold mb-4">Join the Conversation</h3>
             <p className="text-black/60 mb-8 max-w-md mx-auto">
-              Subscribe to join the inner circle, comment on posts, and get exclusive insights.
+              Share your insights with the community. Login to join the Parallel Circle.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <button
                 onClick={login}
-                className="bg-black text-white px-8 py-3 rounded-full font-bold hover:bg-black/80 transition-all w-full sm:w-auto"
+                className="bg-black text-white px-8 py-4 rounded-full font-bold hover:bg-black/80 transition-all w-full sm:w-auto flex items-center justify-center gap-2"
               >
-                Login to Comment
+                Login to Comment <ArrowRight size={18} />
               </button>
-              <Link
-                to="/newsletter"
-                className="bg-blue-600 text-white px-8 py-3 rounded-full font-bold hover:bg-blue-700 transition-all w-full sm:w-auto"
-              >
-                Subscribe
-              </Link>
             </div>
           </div>
         )}
@@ -243,7 +225,7 @@ function CommentItem({
       <div className="flex gap-4">
         <div className="w-12 h-12 rounded-full bg-gray-100 overflow-hidden shrink-0">
           <img
-            src={comment.authorAvatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${comment.authorName}`}
+            src={comment.authorAvatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(comment.authorName)}`}
             alt={comment.authorName}
             referrerPolicy="no-referrer"
           />
@@ -256,7 +238,12 @@ function CommentItem({
               </span>
               {comment.isTeamReply && (
                 <span className="bg-blue-600 text-white text-[10px] font-black uppercase tracking-tighter px-2 py-0.5 rounded flex items-center gap-1">
-                  <Shield size={10} /> Team Parallel Pages
+                  <Shield size={10} /> Team
+                </span>
+              )}
+              {comment.authorRole === 'writer' && !comment.isTeamReply && (
+                <span className="bg-purple-100 text-purple-600 text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded">
+                  Writer
                 </span>
               )}
               <span className="text-xs text-black/20">• {formatDate(comment.createdAt)}</span>

@@ -90,18 +90,36 @@ import AdminDashboard from './pages/admin/Dashboard';
 import AdminPosts from './pages/admin/Posts';
 import AdminContributors from './pages/admin/Contributors';
 import AdminSettings from './pages/admin/Settings';
+import AdminAnalytics from './pages/admin/Analytics';
+import AdminSubscribers from './pages/admin/Subscribers';
+import AdminUsers from './pages/admin/Users';
+import AdminComments from './pages/admin/Comments';
+import WriterDashboard from './pages/writer/Dashboard';
+import WriterPosts from './pages/writer/Posts';
+import WriterEditor from './pages/writer/Editor';
 import Login from './pages/Login';
 import Terms from './pages/Terms';
 import Privacy from './pages/Privacy';
 import ScrollToTop from './components/ScrollToTop';
+import FloatingCTA from './components/FloatingCTA';
+import WhatsAppButton from './components/WhatsAppButton';
+import { useAnalytics } from './hooks/useAnalytics';
 
-const ProtectedRoute = ({ children, requireAdmin = false }: { children: React.ReactNode, requireAdmin?: boolean }) => {
+const ProtectedRoute = ({ children, requireAdmin = false, requireWriter = false }: { children: React.ReactNode, requireAdmin?: boolean, requireWriter?: boolean }) => {
   const { user, loading } = useApp();
   if (loading) return <div className="flex items-center justify-center h-screen">Loading...</div>;
   if (!user) return <Navigate to="/login" />;
+  
   if (requireAdmin && user.role !== 'admin') return <Navigate to="/" />;
+  if (requireWriter && user.role !== 'writer' && user.role !== 'admin') return <Navigate to="/" />;
+  
   return <>{children}</>;
 };
+
+function AnalyticsTracker() {
+  useAnalytics();
+  return null;
+}
 
 export default function App() {
   const [settings, setSettings] = useState<SiteSettings>(DEFAULT_SETTINGS);
@@ -160,7 +178,7 @@ export default function App() {
     setUser(null);
   };
 
-  if (loading || !authReady) return <div className="flex items-center justify-center h-screen">Initializing Blog...</div>;
+  if (loading || !authReady) return <div className="flex items-center justify-center h-screen">Initializing Parallel Pages...</div>;
 
   return (
     <ErrorBoundary>
@@ -168,6 +186,9 @@ export default function App() {
         <AppContext.Provider value={{ settings, user, loading, login, logout, refreshSettings, refreshUser }}>
           <Router>
             <ScrollToTop />
+            <AnalyticsTracker />
+            <FloatingCTA />
+            <WhatsAppButton />
             <Routes>
               {/* Public Routes */}
               <Route path="/" element={<Home />} />
@@ -181,9 +202,19 @@ export default function App() {
               <Route path="/terms" element={<Terms />} />
               <Route path="/privacy" element={<Privacy />} />
 
+              {/* Writer Routes */}
+              <Route path="/writer" element={<ProtectedRoute requireWriter><WriterDashboard /></ProtectedRoute>} />
+              <Route path="/writer/posts" element={<ProtectedRoute requireWriter><WriterPosts /></ProtectedRoute>} />
+              <Route path="/writer/new" element={<ProtectedRoute requireWriter><WriterEditor /></ProtectedRoute>} />
+              <Route path="/writer/edit/:id" element={<ProtectedRoute requireWriter><WriterEditor /></ProtectedRoute>} />
+
               {/* Admin Routes */}
               <Route path="/admin" element={<ProtectedRoute requireAdmin><AdminDashboard /></ProtectedRoute>} />
+              <Route path="/admin/analytics" element={<ProtectedRoute requireAdmin><AdminAnalytics /></ProtectedRoute>} />
+              <Route path="/admin/subscribers" element={<ProtectedRoute requireAdmin><AdminSubscribers /></ProtectedRoute>} />
               <Route path="/admin/posts" element={<ProtectedRoute requireAdmin><AdminPosts /></ProtectedRoute>} />
+              <Route path="/admin/users" element={<ProtectedRoute requireAdmin><AdminUsers /></ProtectedRoute>} />
+              <Route path="/admin/comments" element={<ProtectedRoute requireAdmin><AdminComments /></ProtectedRoute>} />
               <Route path="/admin/contributors" element={<ProtectedRoute requireAdmin><AdminContributors /></ProtectedRoute>} />
               <Route path="/admin/settings" element={<ProtectedRoute requireAdmin><AdminSettings /></ProtectedRoute>} />
             </Routes>

@@ -12,10 +12,12 @@
     "lint": "tsc --noEmit"
   },
   "dependencies": {
+    "@types/dompurify": "^3.0.5",
     "bcryptjs": "^2.4.3",
     "clsx": "^2.1.1",
     "cookie-parser": "^1.4.7",
     "date-fns": "^4.1.0",
+    "dompurify": "^3.4.1",
     "dotenv": "^17.2.3",
     "express": "^4.21.2",
     "firebase": "^12.11.0",
@@ -28,7 +30,9 @@
     "react-helmet-async": "^3.0.0",
     "react-hook-form": "^7.71.2",
     "react-markdown": "^10.1.0",
+    "react-quill-new": "^3.8.3",
     "react-router-dom": "^7.13.1",
+    "recharts": "^3.8.1",
     "tailwind-merge": "^3.5.0",
     "zod": "^4.3.6"
   },

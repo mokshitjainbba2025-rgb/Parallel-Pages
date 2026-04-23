@@ -17,7 +17,7 @@ export default function Home() {
   useEffect(() => {
     const fetchPosts = async () => {
       try {
-        const data = await api.getPublishedPosts();
+        const data = await api.getPosts('published');
         setPosts(data);
       } catch (err) {
         console.error(err);
@@ -74,12 +74,16 @@ export default function Home() {
             <div className="w-full md:w-1/2">
               <Link to={`/blog/${featuredPost.slug}`}>
                 <div className="aspect-[16/10] overflow-hidden rounded-2xl bg-gray-100">
-                  <img
-                    src={featuredPost.coverImage}
-                    alt={featuredPost.title}
-                    className="w-full h-full object-cover hover:scale-105 transition-transform duration-700"
-                    referrerPolicy="no-referrer"
-                  />
+                  {featuredPost.coverImage ? (
+                    <img
+                      src={featuredPost.coverImage}
+                      alt={featuredPost.title}
+                      className="w-full h-full object-cover hover:scale-105 transition-transform duration-700"
+                      referrerPolicy="no-referrer"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-gray-200 flex items-center justify-center text-black/20 font-serif italic">No image</div>
+                  )}
                 </div>
               </Link>
             </div>
@@ -131,12 +135,16 @@ export default function Home() {
             >
               <Link to={`/blog/${post.slug}`}>
                 <div className="aspect-[4/3] overflow-hidden rounded-xl bg-gray-100 mb-6">
-                  <img
-                    src={post.coverImage}
-                    alt={post.title}
-                    className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
-                    referrerPolicy="no-referrer"
-                  />
+                  {post.coverImage ? (
+                    <img
+                      src={post.coverImage}
+                      alt={post.title}
+                      className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
+                      referrerPolicy="no-referrer"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-gray-200 flex items-center justify-center text-black/20 font-serif italic text-xs">No image</div>
+                  )}
                 </div>
               </Link>
               <div className="flex items-center gap-3 mb-4">
@@ -161,6 +169,73 @@ export default function Home() {
               </div>
             </motion.div>
           ))}
+        </div>
+      </section>
+
+      {/* Stats Section */}
+      <section className="mb-24 py-16 border-y border-black/5">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-12 text-center">
+          <div>
+            <p className="text-4xl font-serif font-bold mb-2">1,200+</p>
+            <p className="text-xs text-black/40 uppercase font-bold tracking-widest">Readers</p>
+          </div>
+          <div>
+            <p className="text-4xl font-serif font-bold mb-2">45+</p>
+            <p className="text-xs text-black/40 uppercase font-bold tracking-widest">Writers</p>
+          </div>
+          <div>
+            <p className="text-4xl font-serif font-bold mb-2">150+</p>
+            <p className="text-xs text-black/40 uppercase font-bold tracking-widest">Stories</p>
+          </div>
+          <div>
+            <p className="text-4xl font-serif font-bold mb-2">5.2k</p>
+            <p className="text-xs text-black/40 uppercase font-bold tracking-widest">Shares</p>
+          </div>
+        </div>
+      </section>
+
+      {/* Community Section */}
+      <section className="mb-24">
+        <div className="bg-blue-600 rounded-[2.5rem] p-12 md:p-20 text-white relative overflow-hidden group">
+          <div className="absolute -top-24 -right-24 w-80 h-80 bg-white/10 blur-3xl rounded-full group-hover:scale-110 transition-transform duration-1000"></div>
+          <div className="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            <div>
+              <h2 className="text-4xl md:text-5xl font-serif font-bold mb-6 leading-tight">
+                Beyond the screen. <br/> Join the collective.
+              </h2>
+              <p className="text-blue-100 text-lg mb-10 leading-relaxed max-w-md">
+                Our WhatsApp community is where the real conversations happen. Connect with other builders, discuss stories, and stay updated.
+              </p>
+              <a 
+                href="https://chat.whatsapp.com/your-invite-link" 
+                target="_blank" 
+                rel="noreferrer"
+                className="inline-flex items-center gap-3 bg-white text-blue-600 px-10 py-5 rounded-3xl font-bold hover:bg-blue-50 transition-all shadow-xl shadow-blue-900/20"
+              >
+                Join WhatsApp Group <ArrowRight size={20} />
+              </a>
+            </div>
+            <div className="hidden lg:flex justify-center">
+              <div className="relative">
+                <div className="w-64 h-64 bg-white/20 rounded-[2rem] backdrop-blur-md border border-white/30 p-8 flex flex-col justify-between">
+                  <div className="flex -space-x-4">
+                    {[1, 2, 3, 4].map(i => (
+                      <div key={i} className="w-12 h-12 rounded-full border-4 border-blue-600 bg-gray-200 overflow-hidden">
+                        <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${i+10}`} alt="Member" />
+                      </div>
+                    ))}
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold">150+</p>
+                    <p className="text-sm text-blue-200">Active Members</p>
+                  </div>
+                </div>
+                <div className="absolute -bottom-6 -left-6 bg-green-400 text-black px-4 py-2 rounded-xl text-xs font-bold shadow-lg">
+                  LIVE NOW ⚡️
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
