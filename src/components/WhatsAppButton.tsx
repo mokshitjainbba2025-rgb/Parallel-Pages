@@ -3,7 +3,7 @@ import { MessageCircle } from 'lucide-react';
 import { motion } from 'motion/react';
 
 export default function WhatsAppButton() {
-  const WHATSAPP_LINK = "https://chat.whatsapp.com/your-invite-link"; // User should replace this
+  const WHATSAPP_LINK = "https://chat.whatsapp.com/H8KlvMtgnt6Cn7SOyQFMcA"; // User should replace this
 
   return (
     <motion.a
