@@ -5,10 +5,10 @@ import { api } from '../../services/api';
 import { useApp } from '../../App';
 import { useNavigate } from 'react-router-dom';
 
-type ModalState = 'role-selection' | 'reader-auth' | 'writer-signup' | 'writer-login' | 'upgrade';
+type ModalState = 'login' | 'role-selection' | 'reader-auth' | 'writer-signup' | 'writer-login' | 'upgrade';
 
 export default function AuthModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
-  const [state, setState] = useState<ModalState>('role-selection');
+  const [state, setState] = useState<ModalState>('login');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { user, refreshUser } = useApp();
@@ -23,8 +23,7 @@ export default function AuthModal({ isOpen, onClose }: { isOpen: boolean; onClos
   if (!isOpen) return null;
 
   const handleBack = () => {
-    if (state === 'writer-login') setState('writer-signup');
-    else setState('role-selection');
+    setState('login');
     setError(null);
   };
 
@@ -53,14 +52,11 @@ export default function AuthModal({ isOpen, onClose }: { isOpen: boolean; onClos
     setLoading(true);
     setError(null);
     try {
-      if (state === 'reader-auth') {
+      if (state === 'login' || state === 'reader-auth' || state === 'writer-login') {
         const result = await api.loginWithEmail(email, password);
         handleSuccess(result.profile);
       } else if (state === 'writer-signup') {
         const result = await api.signupWithEmail({ email, password, name, role: 'writer', bio });
-        handleSuccess(result.profile);
-      } else if (state === 'writer-login') {
-        const result = await api.loginWithEmail(email, password);
         handleSuccess(result.profile);
       } else if (state === 'upgrade') {
         if (user) {
@@ -79,11 +75,75 @@ export default function AuthModal({ isOpen, onClose }: { isOpen: boolean; onClos
 
   const renderContent = () => {
     switch (state) {
-      case 'role-selection':
+      case 'login':
         return (
           <div className="space-y-6">
             <div className="text-center mb-8">
-              <h2 className="text-3xl font-serif font-bold mb-2">Join the Parallel Journey</h2>
+              <h2 className="text-4xl font-serif font-bold mb-2">Welcome Back</h2>
+              <p className="text-gray-500">Sign in to Parallel Pages</p>
+            </div>
+
+            <button 
+              onClick={handleGoogleLogin}
+              disabled={loading}
+              className="w-full flex items-center justify-center gap-3 py-4 border-2 border-gray-100 rounded-2xl font-bold hover:bg-gray-50 transition-all disabled:opacity-50"
+            >
+              <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" className="w-5 h-5" />
+              Continue with Google
+            </button>
+
+            <div className="relative py-4">
+              <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-100"></div></div>
+              <div className="relative flex justify-center text-xs uppercase tracking-widest"><span className="bg-white px-2 text-gray-400">Or use email</span></div>
+            </div>
+
+            <form onSubmit={handleEmailAuth} className="space-y-4">
+              <input 
+                type="email" placeholder="Email" required 
+                className="w-full px-6 py-4 bg-gray-50 rounded-2xl border-2 border-transparent focus:border-black outline-none transition-all"
+                value={email} onChange={e => setEmail(e.target.value)}
+              />
+              <input 
+                type="password" placeholder="Password" required 
+                className="w-full px-6 py-4 bg-gray-50 rounded-2xl border-2 border-transparent focus:border-black outline-none transition-all"
+                value={password} onChange={e => setPassword(e.target.value)}
+              />
+              <button 
+                 type="submit" disabled={loading}
+                 className="w-full bg-black text-white py-4 rounded-2xl font-bold hover:bg-blue-600 transition-all flex items-center justify-center gap-2"
+              >
+                {loading ? <Loader2 className="animate-spin" /> : 'Log In'}
+              </button>
+            </form>
+
+            <div className="pt-8 border-t border-gray-100 flex flex-col gap-4">
+              <p className="text-center text-sm text-gray-400 font-medium">New to Parallel Pages?</p>
+              <div className="grid grid-cols-2 gap-4">
+                <button 
+                  onClick={() => setState('role-selection')}
+                  className="px-4 py-3 bg-blue-50 text-blue-600 rounded-xl font-bold text-sm hover:bg-blue-100 transition-colors"
+                >
+                  Join as Reader
+                </button>
+                <button 
+                  onClick={() => setState('writer-signup')}
+                  className="px-4 py-3 bg-gray-50 text-black rounded-xl font-bold text-sm hover:bg-gray-100 transition-colors"
+                >
+                  Become a Writer
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+
+      case 'role-selection':
+        return (
+          <div className="space-y-6">
+            <button onClick={handleBack} className="flex items-center gap-2 text-gray-400 hover:text-black transition-colors mb-4">
+              <ArrowLeft size={16} /> Back to login
+            </button>
+            <div className="text-center mb-8">
+              <h2 className="text-3xl font-serif font-bold mb-2">Join the Collective</h2>
               <p className="text-gray-500">Pick your path in our creative ecosystem.</p>
             </div>
             
