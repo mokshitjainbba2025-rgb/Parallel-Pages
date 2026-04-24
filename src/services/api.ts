@@ -112,13 +112,16 @@ export const api = {
       const userSnap = await getDoc(userRef);
       
       if (!userSnap.exists()) {
-        const adminEmail = 'mokshit.jain.bba2025@atlasskilltech.university';
+        const admins = [
+          'mokshit.jain.bba2025@atlasskilltech.university',
+          'team.parallelpages@gmail.com'
+        ];
         const profile: UserProfile = {
           uid: user.uid,
           email: user.email || '',
           displayName: user.displayName || '',
           photoURL: user.photoURL || undefined,
-          role: user.email === adminEmail ? 'admin' : 'reader',
+          role: admins.includes(user.email || '') ? 'admin' : 'reader',
           createdAt: serverTimestamp()
         };
         await setDoc(userRef, profile);
