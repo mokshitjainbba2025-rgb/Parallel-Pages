@@ -192,6 +192,15 @@ export default function Home() {
             <p className="text-xs text-black/40 uppercase font-bold tracking-widest">Shares</p>
           </div>
         </div>
+        <motion.p 
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          transition={{ delay: 0.5, duration: 1 }}
+          viewport={{ once: true }}
+          className="text-sm text-black/40 mt-8 max-w-lg mx-auto leading-relaxed font-medium italic text-center"
+        >
+          “We’re building towards this. Our story is in progress—yours deserves to be told today.”
+        </motion.p>
       </section>
 
       {/* Community Section */}
@@ -207,7 +216,7 @@ export default function Home() {
                 Our WhatsApp community is where the real conversations happen. Connect with other builders, discuss stories, and stay updated.
               </p>
               <a 
-                href="https://chat.whatsapp.com/your-invite-link" 
+                href="https://chat.whatsapp.com/H8KlvMtgnt6Cn7SOyQFMcA" 
                 target="_blank" 
                 rel="noreferrer"
                 className="inline-flex items-center gap-3 bg-white text-blue-600 px-10 py-5 rounded-3xl font-bold hover:bg-blue-50 transition-all shadow-xl shadow-blue-900/20"
