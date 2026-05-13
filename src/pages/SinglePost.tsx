@@ -7,7 +7,7 @@ import { api } from '../services/api';
 import { useApp } from '../App';
 import { motion, useScroll, useSpring, AnimatePresence } from 'motion/react';
 import { formatDate } from '../lib/utils';
-import ReactMarkdown from 'react-markdown';
+import DOMPurify from 'dompurify';
 import { Share2, Bookmark, Clock, ChevronLeft, Twitter, Linkedin, Heart, MessageCircle, Sparkles, ArrowRight } from 'lucide-react';
 import { VerifiedBadge } from '../components/blog/VerifiedBadge';
 import { ContributorBox } from '../components/blog/ContributorBox';
@@ -220,9 +220,10 @@ export default function SinglePost() {
         </div>
 
         {/* Content */}
-        <div className="prose prose-lg max-w-none prose-headings:font-serif prose-headings:font-bold prose-a:text-blue-600 prose-img:rounded-3xl prose-blockquote:border-l-4 prose-blockquote:border-blue-600 prose-blockquote:bg-blue-50/50 prose-blockquote:p-8 prose-blockquote:rounded-r-3xl prose-blockquote:italic prose-blockquote:text-2xl prose-blockquote:font-serif">
-          <ReactMarkdown>{post.content}</ReactMarkdown>
-        </div>
+        <div 
+          className="prose prose-lg max-w-none prose-headings:font-serif prose-headings:font-bold prose-a:text-blue-600 prose-img:rounded-3xl prose-blockquote:border-l-4 prose-blockquote:border-blue-600 prose-blockquote:bg-blue-50/50 prose-blockquote:p-8 prose-blockquote:rounded-r-3xl prose-blockquote:italic prose-blockquote:text-2xl prose-blockquote:font-serif ql-editor-content"
+          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(post.content) }}
+        />
 
         {/* Tags */}
         <div className="mt-20 pt-12 border-t border-black/5">

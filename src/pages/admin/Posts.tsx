@@ -6,6 +6,8 @@ import { useApp } from '../../App';
 import { Plus, Search, MoreVertical, Edit2, Trash2, ExternalLink, X, Save, Image as ImageIcon, Tag, Layout as LayoutIcon, User as UserIcon, Check, Star } from 'lucide-react';
 import { formatDate } from '../../lib/utils';
 import { useSearchParams } from 'react-router-dom';
+import ReactQuill from 'react-quill-new';
+import 'react-quill-new/dist/quill.snow.css';
 import { motion, AnimatePresence } from 'motion/react';
 
 export default function AdminPosts() {
@@ -70,6 +72,16 @@ export default function AdminPosts() {
     } catch (err) {
       console.error(err);
     }
+  };
+
+  const modules = {
+    toolbar: [
+      [{ 'header': [1, 2, 3, false] }],
+      ['bold', 'italic', 'underline', 'strike', 'blockquote'],
+      [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+      ['link', 'image', 'code-block'],
+      ['clean']
+    ],
   };
 
   const handleSave = async () => {
@@ -263,6 +275,31 @@ export default function AdminPosts() {
               exit={{ scale: 0.95, y: 20 }}
               className="bg-white w-full max-w-6xl h-[90vh] rounded-3xl shadow-2xl overflow-hidden flex flex-col"
             >
+              {/* Editor styles */}
+              <style>{`
+                .ql-container {
+                  border: none !important;
+                  font-family: inherit !important;
+                  font-size: 1.125rem !important;
+                }
+                .ql-toolbar {
+                  border: none !important;
+                  border-bottom: 1px solid #f3f4f6 !important;
+                  background: white;
+                  padding: 12px 0 !important;
+                  margin-bottom: 20px;
+                }
+                .ql-editor {
+                  padding: 0 !important;
+                  min-height: 400px;
+                }
+                .ql-editor.ql-blank::before {
+                  color: #e5e7eb !important;
+                  font-style: italic !important;
+                  left: 0 !important;
+                }
+              `}</style>
+
               {/* Editor Header */}
               <div className="h-20 border-b border-gray-100 px-8 flex items-center justify-between bg-white shrink-0">
                 <div className="flex items-center gap-4">
@@ -310,12 +347,19 @@ export default function AdminPosts() {
                       }}
                       className="w-full text-4xl font-serif font-bold border-none focus:ring-0 placeholder:text-gray-200"
                     />
-                    <textarea
-                      placeholder="Write your story here... (Markdown supported)"
-                      value={editingPost.content}
-                      onChange={(e) => setEditingPost({ ...editingPost, content: e.target.value })}
-                      className="w-full h-[500px] text-lg leading-relaxed border-none focus:ring-0 placeholder:text-gray-200 resize-none"
-                    />
+                    <div className="min-h-[400px]">
+                      <label className="block text-xs font-bold text-gray-500 mb-4 uppercase tracking-widest flex items-center gap-2">
+                        <Edit2 size={12} /> Content
+                      </label>
+                      <ReactQuill 
+                        theme="snow"
+                        value={editingPost.content}
+                        onChange={(content) => setEditingPost({ ...editingPost, content })}
+                        modules={modules}
+                        className="h-full font-serif text-lg leading-relaxed"
+                        placeholder="Tell your story..."
+                      />
+                    </div>
                   </div>
 
                   {/* Sidebar Settings */}

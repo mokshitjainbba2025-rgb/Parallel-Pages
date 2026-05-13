@@ -15,9 +15,9 @@ export default function Login() {
     setError('');
     setLoading(true);
     try {
-      const firebaseUser = await api.loginWithGoogle();
-      if (firebaseUser) {
-        const profile = await api.getUserProfile(firebaseUser.uid);
+      const result = await api.loginWithGoogle();
+      if (result) {
+        const profile = result.profile;
         if (profile?.role === 'admin') {
           navigate('/admin');
         } else if (profile?.role === 'writer') {
