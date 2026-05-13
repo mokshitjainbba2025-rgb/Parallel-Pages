@@ -124,6 +124,27 @@ export default function WriterPosts() {
                     >
                       <Edit3 size={18} />
                     </Link>
+                    {(post.status === 'draft' || post.status === 'rejected') && (
+                      <button 
+                        onClick={async () => {
+                          if (confirm('Are you sure you want to delete this story? This action cannot be undone.')) {
+                            try {
+                              setLoading(true);
+                              await api.deletePost(post.id);
+                              await fetchPosts();
+                            } catch (err) {
+                              console.error(err);
+                            } finally {
+                              setLoading(false);
+                            }
+                          }
+                        }}
+                        className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                        title="Delete Story"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    )}
                   </div>
                 </td>
               </tr>

@@ -252,6 +252,25 @@ export default function AdminPosts() {
                     >
                       <Edit2 size={18} />
                     </button>
+                    <button
+                      onClick={async () => {
+                        if (confirm('Are you sure you want to delete this post? This action cannot be undone.')) {
+                          try {
+                            setLoading(true);
+                            await api.deletePost(post.id);
+                            await fetchPosts();
+                          } catch (err) {
+                            console.error(err);
+                          } finally {
+                            setLoading(false);
+                          }
+                        }
+                      }}
+                      className="p-2 text-gray-400 hover:text-red-600 transition-colors"
+                      title="Delete Post"
+                    >
+                      <Trash2 size={18} />
+                    </button>
                   </div>
                 </td>
               </tr>
