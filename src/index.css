@@ -14,10 +14,37 @@
 
 .prose {
   @apply max-w-none;
+  overflow-wrap: break-word;
+  word-break: normal;
 }
 
-.prose p {
-  @apply mb-8 leading-relaxed text-black/70;
+.prose p, .ql-editor-content p {
+  @apply mb-6 leading-relaxed text-black/70;
+  overflow-wrap: break-word;
+  word-break: normal;
+}
+
+.ql-editor-content p {
+  @apply text-inherit;
+}
+
+.ql-editor-content p:last-child {
+  @apply mb-0;
+}
+
+/* Fix for Quill blank lines */
+.ql-editor-content p br {
+  display: block;
+  content: "";
+  margin-top: 1em;
+}
+
+.prose img, .prose video {
+  @apply max-w-full h-auto rounded-3xl my-12;
+}
+
+.prose pre {
+  @apply bg-black text-white p-6 rounded-2xl overflow-x-auto my-8 font-mono text-sm;
 }
 
 .prose h2 {

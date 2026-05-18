@@ -8,6 +8,7 @@ import { useApp } from '../App';
 import { motion, useScroll, useSpring, AnimatePresence } from 'motion/react';
 import { formatDate } from '../lib/utils';
 import DOMPurify from 'dompurify';
+import ReactMarkdown from 'react-markdown';
 import { Share2, Bookmark, Clock, ChevronLeft, Twitter, Linkedin, Heart, MessageCircle, Sparkles, ArrowRight } from 'lucide-react';
 import { VerifiedBadge } from '../components/blog/VerifiedBadge';
 import { ContributorBox } from '../components/blog/ContributorBox';
@@ -220,10 +221,18 @@ export default function SinglePost() {
         </div>
 
         {/* Content */}
-        <div 
-          className="prose prose-lg max-w-none prose-headings:font-serif prose-headings:font-bold prose-a:text-blue-600 prose-img:rounded-3xl prose-blockquote:border-l-4 prose-blockquote:border-blue-600 prose-blockquote:bg-blue-50/50 prose-blockquote:p-8 prose-blockquote:rounded-r-3xl prose-blockquote:italic prose-blockquote:text-2xl prose-blockquote:font-serif ql-editor-content"
-          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(post.content) }}
-        />
+        <div className="overflow-x-hidden">
+          {post.content.trim().startsWith('<') ? (
+            <div 
+              className="prose prose-lg prose-headings:font-serif prose-headings:font-bold prose-a:text-blue-600 prose-img:rounded-3xl prose-blockquote:border-none ql-editor-content"
+              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(post.content) }}
+            />
+          ) : (
+            <div className="prose prose-lg prose-headings:font-serif prose-headings:font-bold prose-a:text-blue-600 prose-img:rounded-3xl prose-blockquote:border-none">
+              <ReactMarkdown>{post.content}</ReactMarkdown>
+            </div>
+          )}
+        </div>
 
         {/* Tags */}
         <div className="mt-20 pt-12 border-t border-black/5">
