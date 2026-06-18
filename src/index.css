@@ -14,14 +14,22 @@
 
 .prose {
   @apply max-w-none;
-  overflow-wrap: break-word;
   word-break: normal;
+  word-wrap: normal;
+  overflow-wrap: normal;
+  -webkit-hyphens: none;
+  -moz-hyphens: none;
+  hyphens: none;
 }
 
 .prose p, .ql-editor-content p {
   @apply mb-6 leading-relaxed text-black/70;
-  overflow-wrap: break-word;
   word-break: normal;
+  word-wrap: normal;
+  overflow-wrap: normal;
+  -webkit-hyphens: none;
+  -moz-hyphens: none;
+  hyphens: none;
 }
 
 .ql-editor-content p {
