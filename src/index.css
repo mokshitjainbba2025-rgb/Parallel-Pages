@@ -14,19 +14,31 @@
 
 .prose {
   @apply max-w-none;
+  white-space: normal;
   word-break: normal;
-  word-wrap: normal;
-  overflow-wrap: normal;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
   -webkit-hyphens: none;
   -moz-hyphens: none;
   hyphens: none;
 }
 
-.prose p, .ql-editor-content p {
+.prose p, 
+.prose li, 
+.prose span, 
+.prose strong, 
+.prose a, 
+.prose h1, .prose h2, .prose h3, .prose h4, .prose h5, .prose h6,
+.ql-editor-content p,
+.ql-editor-content li,
+.ql-editor-content span,
+.ql-editor-content strong,
+.ql-editor-content a {
   @apply mb-6 leading-relaxed text-black/70;
+  white-space: normal;
   word-break: normal;
-  word-wrap: normal;
-  overflow-wrap: normal;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
   -webkit-hyphens: none;
   -moz-hyphens: none;
   hyphens: none;
