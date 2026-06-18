@@ -18,6 +18,7 @@ export default function WriterLayout({ children }: { children: React.ReactNode }
     { label: 'Overview', href: '/writer', icon: LayoutDashboard },
     { label: 'My Stories', href: '/writer/posts', icon: FileText },
     { label: 'New Story', href: '/writer/new', icon: PlusCircle },
+    { label: 'My Profile', href: '/writer/profile', icon: User },
   ];
 
   return (

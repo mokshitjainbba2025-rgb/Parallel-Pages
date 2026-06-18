@@ -60,7 +60,7 @@ export default function AuthModal({ isOpen, onClose }: { isOpen: boolean; onClos
         handleSuccess(result.profile);
       } else if (state === 'upgrade') {
         if (user) {
-          await api.upgradeToWriter(user.uid, bio);
+          await api.upgradeToWriter(user.uid, bio, user.displayName);
           await refreshUser();
           navigate('/writer');
           onClose();

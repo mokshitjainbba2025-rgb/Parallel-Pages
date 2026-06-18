@@ -63,6 +63,7 @@ export default function WriterEditor() {
         authorId: user?.uid,
         authorName: user?.displayName,
         authorAvatar: user?.photoURL,
+        contributorId: user?.uid,
         status: submit ? 'submitted' : (post.status || 'draft')
       };
 

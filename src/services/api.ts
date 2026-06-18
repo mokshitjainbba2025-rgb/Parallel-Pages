@@ -155,6 +155,23 @@ export const api = {
       };
       
       await setDoc(doc(db, 'users', result.user.uid), profile);
+
+      if (data.role === 'writer') {
+        const initialImage = `https://ui-avatars.com/api/?name=${encodeURIComponent(data.name)}&background=0D0D0D&color=fff&size=512&bold=true`;
+        await setDoc(doc(db, 'contributors', result.user.uid), {
+          id: result.user.uid,
+          name: data.name,
+          bio: data.bio || '',
+          image: initialImage,
+          social: {
+            twitter: '',
+            linkedin: '',
+            github: '',
+            website: ''
+          }
+        });
+      }
+      
       return { user: result.user, profile };
     } catch (error) {
       handleFirestoreError(error, OperationType.CREATE, 'users');
@@ -173,12 +190,35 @@ export const api = {
     }
   },
 
-  async upgradeToWriter(uid: string, bio: string) {
+  async upgradeToWriter(uid: string, bio: string, name?: string) {
     try {
       await updateDoc(doc(db, 'users', uid), { 
         role: 'writer',
         bio,
         upgradedAt: serverTimestamp() 
+      });
+
+      let contributorName = name || '';
+      if (!contributorName) {
+        const userSnap = await getDoc(doc(db, 'users', uid));
+        if (userSnap.exists()) {
+          contributorName = userSnap.data()?.displayName || '';
+        }
+      }
+
+      const initialImage = `https://ui-avatars.com/api/?name=${encodeURIComponent(contributorName || 'Writer')}&background=0D0D0D&color=fff&size=512&bold=true`;
+      
+      await setDoc(doc(db, 'contributors', uid), {
+        id: uid,
+        name: contributorName || 'Writer',
+        bio: bio,
+        image: initialImage,
+        social: {
+          twitter: '',
+          linkedin: '',
+          github: '',
+          website: ''
+        }
       });
     } catch (error) {
       handleFirestoreError(error, OperationType.UPDATE, `users/${uid}`);
@@ -367,7 +407,7 @@ export const api = {
   async createContributor(contributor: Partial<Contributor>) {
     const path = 'contributors';
     try {
-      const newRef = doc(collection(db, 'contributors'));
+      const newRef = contributor.id ? doc(db, 'contributors', contributor.id) : doc(collection(db, 'contributors'));
       const data = { ...contributor, id: newRef.id };
       await setDoc(newRef, data);
       return data;

@@ -97,6 +97,7 @@ import AdminComments from './pages/admin/Comments';
 import WriterDashboard from './pages/writer/Dashboard';
 import WriterPosts from './pages/writer/Posts';
 import WriterEditor from './pages/writer/Editor';
+import WriterProfile from './pages/writer/Profile';
 import Login from './pages/Login';
 import Terms from './pages/Terms';
 import Privacy from './pages/Privacy';
@@ -210,6 +211,7 @@ export default function App() {
               <Route path="/writer/posts" element={<ProtectedRoute requireWriter><WriterPosts /></ProtectedRoute>} />
               <Route path="/writer/new" element={<ProtectedRoute requireWriter><WriterEditor /></ProtectedRoute>} />
               <Route path="/writer/edit/:id" element={<ProtectedRoute requireWriter><WriterEditor /></ProtectedRoute>} />
+              <Route path="/writer/profile" element={<ProtectedRoute requireWriter><WriterProfile /></ProtectedRoute>} />
 
               {/* Admin Routes */}
               <Route path="/admin" element={<ProtectedRoute requireAdmin><AdminDashboard /></ProtectedRoute>} />
