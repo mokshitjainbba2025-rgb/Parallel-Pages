@@ -11,6 +11,19 @@ import { motion } from 'motion/react';
 
 const CATEGORIES = ['Technology', 'Design', 'Startup', 'Lifestyle', 'Personal Growth', 'Storytelling'];
 
+const sanitizeContentText = (content: string): string => {
+  if (!content) return '';
+  return content
+    .replace(/\u200B/g, '') // Zero-width space
+    .replace(/\u00AD/g, '') // Soft hyphen
+    .replace(/\u2028/g, '') // Line separator
+    .replace(/\u2029/g, '') // Paragraph separator
+    .replace(/\uFEFF/g, '') // Byte Order Mark
+    .replace(/&shy;/g, '')   // Soft hyphen entities
+    .replace(/&#173;/g, '')
+    .replace(/&#8203;/g, '');
+};
+
 export default function WriterEditor() {
   const { user } = useApp();
   const { id } = useParams();
@@ -59,6 +72,7 @@ export default function WriterEditor() {
       const slug = post.slug || post.title?.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
       const data = {
         ...post,
+        content: sanitizeContentText(post.content || ''),
         slug,
         authorId: user?.uid,
         authorName: user?.displayName,

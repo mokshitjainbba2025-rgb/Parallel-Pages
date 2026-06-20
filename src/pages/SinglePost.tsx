@@ -14,6 +14,33 @@ import { VerifiedBadge } from '../components/blog/VerifiedBadge';
 import { ContributorBox } from '../components/blog/ContributorBox';
 import CommentSection from '../components/blog/CommentSection';
 
+const sanitizeContentText = (content: string): string => {
+  if (!content) return '';
+  
+  // Debug log hidden and zero-width characters if any are found
+  const hiddenChars: { char: string; code: number; index: number }[] = [];
+  for (let i = 0; i < content.length; i++) {
+    const code = content.charCodeAt(i);
+    // 8203 = zero-width space, 173 = soft hyphen, 8232/8233 = line separators, 65279 = BOM
+    if (code === 8203 || code === 173 || code === 8232 || code === 8233 || code === 65279) {
+      hiddenChars.push({ char: content[i], code, index: i });
+    }
+  }
+  if (hiddenChars.length > 0) {
+    console.log(`[Content Sanitization Debug] Found ${hiddenChars.length} hidden word-breaking characters. Characters codes found:`, Array.from(new Set(hiddenChars.map(c => c.code))));
+  }
+
+  return content
+    .replace(/\u200B/g, '') // Zero-width space
+    .replace(/\u00AD/g, '') // Soft hyphen
+    .replace(/\u2028/g, '') // Line separator
+    .replace(/\u2029/g, '') // Paragraph separator
+    .replace(/\uFEFF/g, '') // Byte Order Mark
+    .replace(/&shy;/g, '')   // Literal soft hyphen entity
+    .replace(/&#173;/g, '')  // Entity numeric representation
+    .replace(/&#8203;/g, ''); // Zero-width space entity
+};
+
 export default function SinglePost() {
   const { slug } = useParams<{ slug: string }>();
   const { settings, user, login } = useApp();
@@ -39,7 +66,11 @@ export default function SinglePost() {
       try {
         const data = await api.getPostBySlug(slug);
         if (data) {
-          setPost(data);
+          const sanitizedData = {
+            ...data,
+            content: sanitizeContentText(data.content)
+          };
+          setPost(sanitizedData);
           setLocalLikes(data.likesCount || 0);
           
           // Increment views

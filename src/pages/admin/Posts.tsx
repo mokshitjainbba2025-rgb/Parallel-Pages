@@ -10,6 +10,19 @@ import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
 import { motion, AnimatePresence } from 'motion/react';
 
+const sanitizeContentText = (content: string): string => {
+  if (!content) return '';
+  return content
+    .replace(/\u200B/g, '') // Zero-width space
+    .replace(/\u00AD/g, '') // Soft hyphen
+    .replace(/\u2028/g, '') // Line separator
+    .replace(/\u2029/g, '') // Paragraph separator
+    .replace(/\uFEFF/g, '') // Byte Order Mark
+    .replace(/&shy;/g, '')   // Soft hyphen entities
+    .replace(/&#173;/g, '')
+    .replace(/&#8203;/g, '');
+};
+
 export default function AdminPosts() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [contributors, setContributors] = useState<Contributor[]>([]);
@@ -88,16 +101,20 @@ export default function AdminPosts() {
     if (!editingPost || !user) return;
     try {
       setLoading(true);
+      const sanitizedPost = {
+        ...editingPost,
+        content: sanitizeContentText(editingPost.content || '')
+      };
       if (editingPost.id) {
-        await api.updatePost(editingPost.id, editingPost);
+        await api.updatePost(editingPost.id, sanitizedPost);
         alert('Post updated successfully!');
       } else {
         await api.createPost({
-          ...editingPost,
+          ...sanitizedPost,
           authorName: user.displayName || settings?.authorName || 'Anonymous',
           authorId: user.uid,
           authorAvatar: user.photoURL || undefined,
-          readingTime: Math.ceil((editingPost.content?.split(' ').length || 0) / 200)
+          readingTime: Math.ceil((sanitizedPost.content?.split(' ').length || 0) / 200)
         });
         alert('Post created successfully!');
       }
